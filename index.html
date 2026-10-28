@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trắc Nghiệm Ôn Tập - An Toàn Web (195 Câu)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            background-color: rgba(56, 189, 248, 0.1);
+            border-color: #38bdf8;
+        }
+
+        .q-grid-btn {
+            transition: all 0.15s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between custom-scrollbar">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-100px] opacity-0 transition-all duration-300 bg-slate-800 text-slate-100 border border-slate-700 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+        <i id="toastIcon" class="fa-solid fa-circle-info text-sky-400"></i>
+        <span id="toastMsg" class="text-sm font-medium"></span>
+    </div>
+
+    <div class="max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
+        <!-- Header -->
+        <header class="border-b border-slate-800 pb-5 mb-6 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-sky-400 flex items-center justify-center sm:justify-start gap-3">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    An Toàn Web - Ôn Tập 195 Câu
+                </h1>
+                <p class="text-slate-400 text-sm mt-1">Ngân hàng câu hỏi trắc nghiệm tương tác kiểm tra & thi giữa kỳ</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="resetQuiz()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-2 rounded-lg flex items-center gap-2 transition">
+                    <i class="fa-solid fa-rotate-right"></i> Làm Lại
+                </button>
+                <button onclick="toggleGridModal()" class="text-xs bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 px-3 py-2 rounded-lg flex items-center gap-2 transition">
+                    <i class="fa-solid fa-border-all"></i> Bảng Danh Sách
+                </button>
+            </div>
+        </header>
+
+        <!-- Controls Section -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-6">
+            <div class="md:col-span-8">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Chủ đề bài tập</label>
+                <select id="partSelect" onchange="filterCategory()" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-sky-500 cursor-pointer">
+                    <option value="all">Tất cả các phần (195 câu)</option>
+                    <option value="p1">Phần 1: SQL Injection (50 câu - 1 đến 50)</option>
+                    <option value="p2">Phần 2: XSS và chiếm phiên (25 câu - 51 đến 75)</option>
+                    <option value="p3">Phần 3: NoSQL Injection (25 câu - 76 đến 100)</option>
+                    <option value="p4">Phần 4: Thu thập thông tin & Dò quét (40 câu - 101 đến 140)</option>
+                    <option value="p5">Phần 5: Chuỗi tấn công Web hoàn chỉnh (35 câu - 141 đến 175)</option>
+                    <option value="p6">Phần 6: Biện pháp phòng chống tổng hợp (20 câu - 176 đến 195)</option>
+                </select>
+            </div>
+            
+            <div class="md:col-span-4">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Chuyển nhanh câu</label>
+                <div class="flex gap-2">
+                    <input type="number" id="jumpInput" placeholder="Nhập số câu (1-195)" min="1" max="195" onkeydown="if(event.key==='Enter') jumpToQuestion()" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-sky-500">
+                    <button onclick="jumpToQuestion()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
+                        Đến
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score & Progress Summary -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 mb-6 backdrop-blur-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm font-medium text-slate-300 mb-3">
+                <div class="flex items-center gap-2">
+                    <span id="questionCount" class="text-sky-400 font-bold">Câu hỏi: 1 / 195</span>
+                    <span id="qBadgeId" class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">#1</span>
+                </div>
+                <div class="flex items-center gap-4 text-xs sm:text-sm">
+                    <span class="text-emerald-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-check"></i> <span id="correctScore">Đúng: 0</span>
+                    </span>
+                    <span class="text-rose-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-xmark"></i> <span id="incorrectScore">Sai: 0</span>
+                    </span>
+                    <span class="text-slate-400 border-l border-slate-700 pl-4">
+                        Tiến độ: <span id="progressText" class="text-slate-200">0%</span>
+                    </span>
+                </div>
+            </div>
+            <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                <div id="progressBar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-300 w-0"></div>
+            </div>
+        </div>
+
+        <!-- Main Quiz Card -->
+        <div class="bg-slate-800 border border-slate-700/80 rounded-2xl p-5 sm:p-7 shadow-2xl mb-6 relative overflow-hidden">
+            <div class="flex items-center justify-between gap-2 mb-4">
+                <span id="qCategory" class="inline-flex items-center gap-1.5 bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    <i class="fa-solid fa-tag"></i> SQL Injection
+                </span>
+                <span id="qStatusIcon" class="text-sm"></span>
+            </div>
+
+            <div id="qTitle" class="text-base sm:text-lg font-semibold text-slate-100 leading-relaxed mb-6 whitespace-pre-line">
+                Đang tải nội dung câu hỏi...
+            </div>
+
+            <!-- Options List -->
+            <div id="optionsGrid" class="space-y-3">
+                <!-- Dynamic Options -->
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between items-center gap-3">
+            <button id="prevBtn" onclick="navigate(-1)" class="flex-1 sm:flex-initial bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 border border-slate-700 text-slate-200 px-5 py-3 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Câu trước
+            </button>
+            <button id="nextBtn" onclick="navigate(1)" class="flex-1 sm:flex-initial bg-sky-500 hover:bg-sky-400 disabled:opacity-40 disabled:hover:bg-sky-500 text-slate-950 font-bold px-6 py-3 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20">
+                Câu tiếp <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal List Question Grid -->
+    <div id="gridModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 sm:p-5 border-b border-slate-800 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-border-all text-sky-400"></i> Danh Sách Câu Hỏi
+                </h3>
+                <button onclick="toggleGridModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-grow">
+                <div class="flex flex-wrap gap-4 text-xs font-medium text-slate-400 mb-4 pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-800 border border-slate-700"></span> Chưa làm</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500"></span> Đúng</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500"></span> Sai</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded border-2 border-sky-400"></span> Đang xem</div>
+                </div>
+                <div id="modalGrid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                    <!-- Dynamic Question Buttons -->
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-800 text-right">
+                <button onclick="toggleGridModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-8 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        Trắc nghiệm Tương Tác - An Toàn Web (195 Câu)
+    </footer>
+
+<script>
+const rawQuestions = [
+    // --- PHẦN 1: SQL INJECTION (1-50) ---
+    { id: 1, p: "p1", c: "SQL Injection", q: "Khi thử nhập dấu nháy đơn (') vào một trường input và trang trả về lỗi cú pháp SQL, điều đó cho thấy gì?", a: ["Trường input không liên quan đến cơ sở dữ liệu", "Ứng dụng có khả năng dễ bị SQL Injection", "Server đang dùng HTTPS", "Mật khẩu đã bị mã hoá"], ans: 1 },
+    { id: 2, p: "p1", c: "SQL Injection", q: "Ký tự nào thường được dùng đầu tiên để kiểm tra lỗ hổng SQL Injection?", a: ["#", "' (dấu nháy đơn)", "%", "&"], ans: 1 },
+    { id: 3, p: "p1", c: "SQL Injection", q: "Thông báo lỗi dạng \"You have an error in your SQL syntax\" thường gợi ý hệ quản trị cơ sở dữ liệu nào?", a: ["MySQL", "MongoDB", "Redis", "SQLite không hỗ trợ thông báo này"], ans: 0 },
+    { id: 4, p: "p1", c: "SQL Injection", q: "Việc ứng dụng không hiển thị lỗi SQL chi tiết (chỉ trả về trang lỗi chung) khiến kiểu tấn công nào trở nên cần thiết hơn?", a: ["UNION-based injection", "Blind SQL Injection", "XSS phản chiếu", "Brute force mật khẩu"], ans: 1 },
+    { id: 5, p: "p1", c: "SQL Injection", q: "Việc thử chèn ký tự đặc biệt để quan sát phản ứng của ứng dụng thuộc giai đoạn nào của tấn công?", a: ["Khai thác (exploitation)", "Dò lỗ hổng (vulnerability identification)", "Duy trì truy cập (persistence)", "Xoá dấu vết"], ans: 1 },
+    { id: 6, p: "p1", c: "SQL Injection", q: "Payload ' OR '1'='1 khi chèn vào trường username nhằm mục đích gì?", a: ["Mã hoá mật khẩu", "Tạo điều kiện luôn đúng để vượt qua kiểm tra đăng nhập", "Xoá toàn bộ bảng users", "Kiểm tra phiên bản database"], ans: 1 },
+    { id: 7, p: "p1", c: "SQL Injection", q: "Trong payload admin'-- , chuỗi -- có vai trò gì?", a: ["Nối thêm một câu lệnh mới", "Vô hiệu hoá (comment) phần còn lại của câu truy vấn", "Mã hoá chuỗi username", "Thực hiện phép so sánh"], ans: 1 },
+    { id: 8, p: "p1", c: "SQL Injection", q: "Để vượt đăng nhập thành công bằng SQL Injection, điều kiện quan trọng nhất là gì?", a: ["Server phải chạy Linux", "Câu truy vấn backend phải nối chuỗi input trực tiếp mà không kiểm tra/tham số hoá", "Mật khẩu phải yếu", "Trang web phải dùng JavaScript"], ans: 1 },
+    { id: 9, p: "p1", c: "SQL Injection", q: "Payload ' OR 1=1-- - khác gì so với ' OR 1=1#?", a: ["Không khác gì, chỉ khác ký tự comment phù hợp với từng DBMS (MySQL dùng # hoặc -- , một số DBMS khác không hỗ trợ #)", "Payload đầu không hoạt động", "Payload thứ hai dùng cho MongoDB", "Payload đầu chỉ dùng cho XSS"], ans: 0 },
+    { id: 10, p: "p1", c: "SQL Injection", q: "Nếu ứng dụng kiểm tra cả username và password riêng biệt trong hai câu lệnh, kẻ tấn công cần làm gì?", a: ["Chỉ cần vượt qua một trong hai trường là đủ", "Có thể cần chèn payload vào cả hai trường hoặc tìm điểm yếu trong logic xử lý", "Không thể khai thác được nữa", "Phải tấn công bằng XSS thay thế"], ans: 1 },
+    { id: 11, p: "p1", c: "SQL Injection", q: "Mục đích của việc dùng ORDER BY tăng dần trong khai thác UNION là gì?", a: ["Sắp xếp lại dữ liệu hiển thị", "Xác định số lượng cột của câu truy vấn gốc", "Mã hoá payload", "Tăng tốc độ truy vấn"], ans: 1 },
+    { id: 12, p: "p1", c: "SQL Injection", q: "Khi ORDER BY 5 gây lỗi nhưng ORDER BY 4 không lỗi, số cột của câu truy vấn là bao nhiêu?", a: ["5", "4", "3", "Không xác định được"], ans: 1 },
+    { id: 13, p: "p1", c: "SQL Injection", q: "Câu lệnh UNION SELECT chỉ hoạt động chính xác khi nào?", a: ["Khi số cột và kiểu dữ liệu giữa hai câu SELECT tương thích", "Khi database là MongoDB", "Khi có quyền admin hệ điều hành", "Khi ứng dụng dùng HTTPS"], ans: 0 },
+    { id: 14, p: "p1", c: "SQL Injection", q: "Hàm nào thường dùng để lấy phiên bản của MySQL?", a: ["version()", "len()", "hash()", "encode()"], ans: 0 },
+    { id: 15, p: "p1", c: "SQL Injection", q: "Hàm nào dùng để lấy tên cơ sở dữ liệu hiện hành trong MySQL?", a: ["current_user()", "database()", "schema_name()", "table_name()"], ans: 1 },
+    { id: 16, p: "p1", c: "SQL Injection", q: "Bảng hệ thống information_schema.tables dùng để làm gì trong khai thác UNION?", a: ["Lưu mật khẩu người dùng", "Liệt kê danh sách các bảng trong cơ sở dữ liệu", "Lưu log truy cập", "Lưu cấu hình mạng"], ans: 1 },
+    { id: 17, p: "p1", c: "SQL Injection", q: "Để liệt kê tên cột của một bảng cụ thể, kẻ tấn công truy vấn bảng nào?", a: ["information_schema.columns", "information_schema.schemata", "information_schema.engines", "information_schema.triggers"], ans: 0 },
+    { id: 18, p: "p1", c: "SQL Injection", q: "Hàm GROUP_CONCAT() trong MySQL được dùng với mục đích gì khi khai thác dữ liệu?", a: ["Mã hoá dữ liệu trước khi trả về", "Gộp nhiều dòng kết quả thành một chuỗi để hiển thị trong một ô kết quả", "Xoá các bản ghi trùng lặp", "Tăng tốc độ truy vấn"], ans: 1 },
+    { id: 19, p: "p1", c: "SQL Injection", q: "Payload UNION SELECT username, password FROM users-- nhằm mục đích gì?", a: ["Xoá bảng users", "Trích xuất thông tin đăng nhập từ bảng users", "Tạo tài khoản mới", "Kiểm tra phiên bản hệ điều hành"], ans: 1 },
+    { id: 20, p: "p1", c: "SQL Injection", q: "Khi số cột của câu SELECT gốc là 3 nhưng kẻ tấn công chỉ muốn lấy 2 giá trị (username, password), cách xử lý phổ biến là gì?", a: ["Bỏ UNION, dùng lệnh khác", "Thêm một giá trị đệm (ví dụ NULL hoặc số) cho đủ 3 cột", "Không thể khai thác được", "Phải đổi sang blind SQLi"], ans: 1 },
+    { id: 21, p: "p1", c: "SQL Injection", q: "Khi tham số nằm trong URL (GET), cách đơn giản nhất để chèn payload là gì?", a: ["Sửa trực tiếp giá trị tham số trên thanh địa chỉ URL", "Phải dùng Burp Suite bắt buộc", "Không thể chèn được", "Phải cài thêm plugin trình duyệt"], ans: 0 },
+    { id: 22, p: "p1", c: "SQL Injection", q: "Với tham số truyền qua phương thức POST, công cụ nào thường dùng để chặn và sửa gói tin trước khi gửi?", a: ["Nmap", "Burp Suite", "Nikto", "OpenVAS"], ans: 1 },
+    { id: 23, p: "p1", c: "SQL Injection", q: "Proxy chặn gói tin (như Burp Suite) hoạt động theo cơ chế nào?", a: ["Đứng giữa trình duyệt và server để chặn/sửa request-response", "Quét cổng mạng", "Quét lỗ hổng tự động hoàn toàn không cần can thiệp", "Chỉ dùng để xem mã nguồn trang"], ans: 0 },
+    { id: 24, p: "p1", c: "SQL Injection", q: "Tham số nào sau đây dễ bị bỏ sót khi kiểm thử SQL Injection vì không hiển thị trên URL?", a: ["Tham số trong Cookie hoặc Header", "Tham số GET hiển thị rõ ràng", "Tên miền website", "Số cổng dịch vụ"], ans: 0 },
+    { id: 25, p: "p1", c: "SQL Injection", q: "Vì sao cần kiểm tra cả các trường ẩn (hidden fields) trong form khi tìm SQL Injection?", a: ["Vì chúng không bao giờ được gửi lên server", "Vì chúng vẫn được gửi lên server và có thể được dùng trong truy vấn SQL", "Vì chúng luôn được mã hoá sẵn", "Vì chúng chỉ ảnh hưởng đến giao diện"], ans: 1 },
+    { id: 26, p: "p1", c: "SQL Injection", q: "Blind SQL Injection được sử dụng khi nào?", a: ["Khi ứng dụng hiển thị lỗi SQL chi tiết", "Khi ứng dụng không trả về thông tin lỗi hoặc dữ liệu trực tiếp", "Khi database là NoSQL", "Khi không có kết nối mạng"], ans: 1 },
+    { id: 27, p: "p1", c: "SQL Injection", q: "Boolean-based blind SQLi dựa vào yếu tố nào để suy luận dữ liệu?", a: ["Thời gian phản hồi của server", "Sự khác biệt giữa phản hồi đúng (true) và sai (false) của trang", "Mã nguồn HTML hiển thị lỗi", "Dung lượng gói tin gửi đi"], ans: 1 },
+    { id: 28, p: "p1", c: "SQL Injection", q: "Payload dạng AND 1=1 và AND 1=2 thường dùng để làm gì trong boolean-based blind SQLi?", a: ["So sánh hai trạng thái phản hồi khác nhau của ứng dụng để xác nhận lỗ hổng", "Tăng tốc độ truy vấn", "Mã hoá dữ liệu", "Xoá log server"], ans: 0 },
+    { id: 29, p: "p1", c: "SQL Injection", q: "Time-based blind SQLi dựa vào cơ chế nào?", a: ["Gọi hàm gây trễ (ví dụ SLEEP()) để quan sát thời gian phản hồi", "So sánh nội dung trả về có đúng/sai", "Đọc thông báo lỗi SQL", "Kiểm tra mã trạng thái HTTP 404"], ans: 0 },
+    { id: 30, p: "p1", c: "SQL Injection", q: "Hàm nào trong MySQL thường dùng để tạo độ trễ phục vụ time-based blind SQLi?", a: ["SLEEP(n)", "NOW()", "RAND()", "COUNT()"], ans: 0 },
+    { id: 31, p: "p1", c: "SQL Injection", q: "Khi nào nên ưu tiên dùng time-based thay vì boolean-based blind SQLi?", a: ["Khi ứng dụng không có bất kỳ sự khác biệt nào trong nội dung phản hồi giữa true/false", "Khi ứng dụng luôn trả về lỗi SQL rõ ràng", "Khi target là MongoDB", "Khi không cần quan tâm đến tốc độ khai thác"], ans: 0 },
+    { id: 32, p: "p1", c: "SQL Injection", q: "Nhược điểm chính của blind SQLi so với UNION-based là gì?", a: ["Không thể khai thác được dữ liệu", "Tốc độ trích xuất dữ liệu chậm hơn nhiều do phải dò từng bit/ký tự", "Chỉ hoạt động trên PostgreSQL", "Yêu cầu quyền root hệ điều hành"], ans: 1 },
+    { id: 33, p: "p1", c: "SQL Injection", q: "Để dò từng ký tự của mật khẩu bằng boolean-based blind SQLi, kỹ thuật thường dùng là gì?", a: ["So sánh ký tự tại từng vị trí bằng hàm SUBSTRING()/SUBSTR() kết hợp điều kiện so sánh", "Gửi toàn bộ wordlist một lần duy nhất", "Dùng UNION SELECT trực tiếp", "Không thể dò được từng ký tự"], ans: 0 },
+    { id: 34, p: "p1", c: "SQL Injection", q: "sqlmap là công cụ dùng để làm gì?", a: ["Quét cổng mạng", "Tự động hoá việc phát hiện và khai thác SQL Injection", "Chống DDoS", "Quản lý mã nguồn"], ans: 1 },
+    { id: 35, p: "p1", c: "SQL Injection", q: "Trình tự khai thác phổ biến khi dùng sqlmap là gì?", a: ["Dump dữ liệu → liệt kê cột → liệt kê bảng → liệt kê database", "Liệt kê database → liệt kê bảng → liệt kê cột → dump dữ liệu", "Liệt kê cột → dump dữ liệu → liệt kê database", "Không có trình tự cố định"], ans: 1 },
+    { id: 36, p: "p1", c: "SQL Injection", q: "Tham số --dbs trong sqlmap dùng để làm gì?", a: ["Liệt kê danh sách các database", "Liệt kê bảng trong database", "Dump toàn bộ dữ liệu", "Kiểm tra phiên bản hệ điều hành"], ans: 0 },
+    { id: 37, p: "p1", c: "SQL Injection", q: "Tham số -D <tên_db> --tables trong sqlmap dùng để làm gì?", a: ["Liệt kê các bảng trong một database cụ thể", "Xoá database", "Liệt kê user hệ thống", "Kiểm tra firewall"], ans: 0 },
+    { id: 38, p: "p1", c: "SQL Injection", q: "Tham số --dump trong sqlmap thực hiện chức năng gì?", a: ["Xuất toàn bộ (hoặc một phần) dữ liệu của bảng được chỉ định ra màn hình/tệp", "Xoá dữ liệu bảng", "Khởi động lại database", "Mã hoá dữ liệu"], ans: 0 },
+    { id: 39, p: "p1", c: "SQL Injection", q: "Vì sao sqlmap vẫn cần người kiểm thử xác định trước vị trí tham số dễ bị tổn thương?", a: ["Vì sqlmap không có khả năng tự dò tham số", "Để tăng độ chính xác và tránh quét lan man không cần thiết, dù sqlmap có thể tự phát hiện ở mức độ nhất định", "Vì sqlmap chỉ hoạt động với POST request", "Vì sqlmap không hỗ trợ cookie"], ans: 1 },
+    { id: 40, p: "p1", c: "SQL Injection", q: "sqlmap có thể hỗ trợ khai thác cả hai loại SQLi nào?", a: ["Chỉ UNION-based", "Cả error-based/UNION-based lẫn blind-based (boolean/time)", "Chỉ time-based", "Chỉ hoạt động trên Oracle"], ans: 1 },
+    { id: 41, p: "p1", c: "SQL Injection", q: "Một form đăng nhập chấp nhận ' OR '1'='1'-- ở trường username và đăng nhập thành công mà không cần mật khẩu đúng. Đây là ví dụ của?", a: ["XSS lưu trữ", "SQL Injection vượt xác thực", "CSRF", "Broken access control không liên quan SQL"], ans: 1 },
+    { id: 42, p: "p1", c: "SQL Injection", q: "Khi khai thác UNION-based SQLi, lý do cần xác định đúng số cột trước là gì?", a: ["Để câu lệnh UNION SELECT không gây lỗi cú pháp do không khớp số cột", "Để tăng tốc độ tấn công", "Vì MySQL yêu cầu khai báo số cột khi đăng nhập", "Không có lý do kỹ thuật, chỉ là thói quen"], ans: 0 },
+    { id: 43, p: "p1", c: "SQL Injection", q: "Trong khai thác thực tế, tại sao information_schema lại quan trọng với kẻ tấn công?", a: ["Vì nó lưu mật khẩu admin dạng plaintext", "Vì nó cung cấp metadata (tên database, bảng, cột) giúp định hướng truy vấn tiếp theo", "Vì nó là bảng log truy cập", "Vì nó chứa mã nguồn ứng dụng"], ans: 1 },
+    { id: 44, p: "p1", c: "SQL Injection", q: "Nếu ứng dụng lọc bỏ dấu nháy đơn ' nhưng không lọc các từ khoá SQL, kẻ tấn công có thể làm gì?", a: ["Không thể khai thác được nữa trong mọi trường hợp", "Tìm cách bypass filter (ví dụ dùng số nguyên không cần nháy đơn, hoặc kỹ thuật encode khác)", "Chuyển hẳn sang tấn công DDoS", "Phải tấn công qua Bluetooth"], ans: 1 },
+    { id: 45, p: "p1", c: "SQL Injection", q: "Một trong những dấu hiệu gợi ý trang có lỗ hổng SQLi dạng blind là gì?", a: ["Trang luôn trả về lỗi 500 với thông tin chi tiết", "Trang trả về nội dung/behavior khác nhau một cách nhất quán giữa điều kiện true và false dù không có thông báo lỗi", "Trang load rất nhanh", "Trang yêu cầu CAPTCHA ngay từ đầu"], ans: 1 },
+    { id: 46, p: "p1", c: "SQL Injection", q: "Tại sao kẻ tấn công thường thử payload trên nhiều tham số khác nhau (không chỉ username/password)?", a: ["Vì bất kỳ input nào được đưa vào truy vấn SQL mà không được xử lý an toàn đều có thể là điểm khai thác", "Vì chỉ trường username mới có lỗ hổng", "Vì quy định pháp luật yêu cầu", "Vì sqlmap yêu cầu như vậy"], ans: 0 },
+    { id: 47, p: "p1", c: "SQL Injection", q: "Mục tiêu cuối cùng của một đợt khai thác SQL Injection thành công thường là gì?", a: ["Chỉ để kiểm tra kết nối mạng", "Truy xuất, chỉnh sửa hoặc xoá dữ liệu trái phép, có thể leo thang tới truy cập hệ thống", "Tăng tốc độ website", "Cải thiện SEO"], ans: 1 },
+    { id: 48, p: "p1", c: "SQL Injection", q: "Giữa UNION-based và Blind-based SQLi, kỹ thuật nào thường được ưu tiên thử trước nếu có thể?", a: ["Blind-based vì luôn nhanh hơn", "UNION-based vì cho phép trích xuất dữ liệu trực tiếp và nhanh hơn nếu điều kiện cho phép", "Không có thứ tự ưu tiên nào", "Luôn dùng sqlmap mà không cần hiểu kỹ thuật thủ công"], ans: 1 },
+    { id: 49, p: "p1", c: "SQL Injection", q: "Việc hiểu rõ cấu trúc câu truy vấn gốc (qua lỗi cú pháp hoặc suy luận) giúp ích gì cho kẻ tấn công?", a: ["Giúp xây dựng payload UNION/khai thác chính xác, tránh gây lỗi không mong muốn", "Không giúp ích gì", "Chỉ giúp cho mục đích phòng thủ", "Giúp tăng tốc độ mạng"], ans: 0 },
+    { id: 50, p: "p1", c: "SQL Injection", q: "Vì sao việc kiểm thử SQL Injection cần thực hiện trong môi trường được cấp phép (lab, CTF, hệ thống có uỷ quyền)?", a: ["Vì SQL Injection không gây hại thực sự", "Vì khai thác trái phép hệ thống thật là hành vi vi phạm pháp luật và đạo đức nghề nghiệp", "Vì SQL Injection chỉ hoạt động trong môi trường lab", "Không có lý do đặc biệt nào"], ans: 1 },
+
+    // --- PHẦN 2: XSS & CHIẾM PHIÊN (51-75) ---
+    { id: 51, p: "p2", c: "XSS & Chiếm Phiên", q: "XSS (Cross-Site Scripting) là lỗ hổng cho phép kẻ tấn công làm gì?", a: ["Chèn và thực thi mã JavaScript tuỳ ý trên trình duyệt nạn nhân", "Chèn câu lệnh SQL vào database", "Quét cổng mạng của server", "Mã hoá dữ liệu truyền tải"], ans: 0 },
+    { id: 52, p: "p2", c: "XSS & Chiếm Phiên", q: "Reflected XSS khác với Stored XSS chủ yếu ở điểm nào?", a: ["Reflected XSS không nguy hiểm bằng", "Reflected XSS chỉ thực thi khi nạn nhân truy cập một liên kết chứa payload, không lưu trữ lâu dài trên server", "Stored XSS chỉ xảy ra trên client", "Reflected XSS chỉ xảy ra trên HTTPS"], ans: 1 },
+    { id: 53, p: "p2", c: "XSS & Chiếm Phiên", q: "Payload đơn giản nào thường dùng để kiểm tra XSS cơ bản?", a: ["' OR 1=1--", "<script>alert(1)<\/script>", "SLEEP(5)", "UNION SELECT 1,2,3"], ans: 1 },
+    { id: 54, p: "p2", c: "XSS & Chiếm Phiên", q: "Nếu nhập <script>alert(1)<\/script> vào ô tìm kiếm và một hộp thoại alert hiện ra, điều đó chứng tỏ gì?", a: ["Trang có lỗ hổng SQL Injection", "Trang có khả năng bị XSS vì script được thực thi", "Trang đã bị tấn công DDoS", "Trình duyệt bị lỗi"], ans: 1 },
+    { id: 55, p: "p2", c: "XSS & Chiếm Phiên", q: "Vì sao một số payload XSS không hoạt động dù input được phản chiếu lại trên trang?", a: ["Vì ứng dụng có thể encode ký tự đặc biệt hoặc lọc thẻ <script>, cần payload khác để bypass", "Vì trình duyệt luôn chặn mọi JavaScript", "Vì XSS không tồn tại trên HTML5", "Vì server luôn trả về lỗi 404"], ans: 0 },
+    { id: 56, p: "p2", c: "XSS & Chiếm Phiên", q: "Thẻ HTML nào ngoài <script> cũng thường được dùng để chèn payload XSS khi <script> bị lọc?", a: ["<img src=x onerror=alert(1)>", "<title>", "<meta charset>", "<!DOCTYPE html>"], ans: 0 },
+    { id: 57, p: "p2", c: "XSS & Chiếm Phiên", q: "Reflected XSS thường được khai thác bằng cách nào để tấn công nạn nhân cụ thể?", a: ["Gửi liên kết chứa payload qua email/chat để dụ nạn nhân bấm vào", "Chèn payload trực tiếp vào database", "Tấn công trực tiếp vào server qua SSH", "Không cần tương tác với nạn nhân"], ans: 0 },
+    { id: 58, p: "p2", c: "XSS & Chiếm Phiên", q: "Mục tiêu chính của việc đánh cắp cookie phiên qua XSS là gì?", a: ["Làm chậm server", "Lấy được session identifier để giả mạo danh tính người dùng đã đăng nhập", "Xoá tài khoản nạn nhân", "Thay đổi mật khẩu nạn nhân trực tiếp"], ans: 1 },
+    { id: 59, p: "p2", c: "XSS & Chiếm Phiên", q: "Thuộc tính JavaScript nào được dùng để đọc cookie của trang hiện tại?", a: ["document.cookie", "window.alert", "location.href", "document.title"], ans: 0 },
+    { id: 60, p: "p2", c: "XSS & Chiếm Phiên", q: "Payload XSS đánh cắp cookie thường gửi dữ liệu cookie đến đâu?", a: ["Lưu vào localStorage của nạn nhân và không gửi đi đâu cả", "Một server do kẻ tấn công kiểm soát (ví dụ qua request ảnh hoặc fetch)", "Database của chính ứng dụng bị tấn công", "DNS server công cộng"], ans: 1 },
+    { id: 61, p: "p2", c: "XSS & Chiếm Phiên", q: "Kỹ thuật phổ biến để gửi cookie đánh cắp được về server của kẻ tấn công là gì?", a: ["Tạo request đến server tấn công bằng thẻ ảnh ẩn hoặc fetch()/XMLHttpRequest chứa cookie trong tham số", "Gửi email tự động từ trình duyệt nạn nhân", "Ghi trực tiếp vào ổ cứng nạn nhân", "Không cần gửi đi, chỉ cần hiển thị alert"], ans: 0 },
+    { id: 62, p: "p2", c: "XSS & Chiếm Phiên", q: "Vì sao kẻ tấn công cần \"dụ\" nạn nhân bấm vào liên kết chứa payload XSS phản chiếu?", a: ["Vì XSS phản chiếu chỉ thực thi trong ngữ cảnh trình duyệt của người thực hiện request đó", "Vì liên kết luôn tự động được thực thi trên server", "Vì đó là yêu cầu bắt buộc của trình duyệt Chrome", "Không cần, script sẽ tự chạy trên mọi máy"], ans: 0 },
+    { id: 63, p: "p2", c: "XSS & Chiếm Phiên", q: "Sau khi có được cookie phiên của nạn nhân, kẻ tấn công thường làm gì tiếp theo?", a: ["Xoá cookie đó", "Nạp (inject) cookie đó vào trình duyệt của mình để truy cập vào tài khoản nạn nhân mà không cần mật khẩu", "Gửi lại cookie cho nạn nhân", "Mã hoá lại cookie"], ans: 1 },
+    { id: 64, p: "p2", c: "XSS & Chiếm Phiên", q: "Kỹ thuật dùng cookie đánh cắp để đăng nhập mà không cần biết mật khẩu gọi là gì?", a: ["Session hijacking (chiếm phiên)", "Session fixation duy nhất", "Brute force", "SQL Injection"], ans: 0 },
+    { id: 65, p: "p2", c: "XSS & Chiếm Phiên", q: "Việc chiếm phiên thành công cho phép kẻ tấn công làm gì trên tài khoản nạn nhân?", a: ["Thực hiện các hành động như thể chính nạn nhân đang đăng nhập (xem/sửa thông tin, thực hiện giao dịch...)", "Chỉ xem được giao diện đăng nhập", "Chỉ đổi được avatar", "Không thể làm gì thêm"], ans: 0 },
+    { id: 66, p: "p2", c: "XSS & Chiếm Phiên", q: "Nếu session token không có thời hạn (không hết hạn) thì rủi ro nào tăng lên khi bị đánh cắp?", a: ["Không có rủi ro gì thêm", "Kẻ tấn công có thể duy trì quyền truy cập trái phép trong thời gian dài", "Token sẽ tự động bị vô hiệu hoá", "Chỉ ảnh hưởng tốc độ tải trang"], ans: 1 },
+    { id: 67, p: "p2", c: "XSS & Chiếm Phiên", q: "Cờ (flag) nào của cookie giúp ngăn JavaScript phía client đọc được giá trị cookie, giảm thiểu rủi ro đánh cắp qua XSS?", a: ["Secure", "HttpOnly", "SameSite=None", "Path=/"], ans: 1 },
+    { id: 68, p: "p2", c: "XSS & Chiếm Phiên", q: "Cờ Secure của cookie có tác dụng gì?", a: ["Chỉ gửi cookie qua kết nối HTTPS", "Ngăn JavaScript đọc cookie", "Mã hoá nội dung cookie", "Giới hạn cookie theo subdomain"], ans: 0 },
+    { id: 69, p: "p2", c: "XSS & Chiếm Phiên", q: "Thuộc tính SameSite của cookie chủ yếu giúp phòng chống loại tấn công nào?", a: ["SQL Injection", "CSRF (Cross-Site Request Forgery)", "Brute force", "DNS spoofing"], ans: 1 },
+    { id: 70, p: "p2", c: "XSS & Chiếm Phiên", q: "Biện pháp cơ bản nhất để phòng chống XSS ở phía ứng dụng là gì?", a: ["Encode/escape output và kiểm soát input đúng ngữ cảnh (HTML, attribute, JS...)", "Chỉ cần dùng HTTPS", "Tắt JavaScript trên server", "Đổi mật khẩu người dùng định kỳ"], ans: 0 },
+    { id: 71, p: "p2", c: "XSS & Chiếm Phiên", q: "Content Security Policy (CSP) giúp giảm thiểu tác hại của XSS bằng cách nào?", a: ["Mã hoá toàn bộ cơ sở dữ liệu", "Hạn chế nguồn script được phép thực thi trên trang", "Quét virus cho trình duyệt", "Tăng tốc độ tải trang"], ans: 1 },
+    { id: 72, p: "p2", c: "XSS & Chiếm Phiên", q: "Vì sao chỉ dựa vào kiểm tra phía client (JavaScript validation) để chống XSS là không đủ?", a: ["Vì kẻ tấn công có thể dễ dàng bỏ qua/tắt kiểm tra phía client và gửi request trực tiếp đến server", "Vì JavaScript không chạy được trên trình duyệt hiện đại", "Vì kiểm tra phía client luôn chính xác tuyệt đối", "Không có lý do, kiểm tra client là đủ"], ans: 0 },
+    { id: 73, p: "p2", c: "XSS & Chiếm Phiên", q: "Việc đặt HttpOnly cho cookie có ngăn được hoàn toàn mọi cuộc tấn công XSS không?", a: ["Có, ngăn chặn hoàn toàn mọi dạng XSS", "Không, nó chỉ ngăn đọc cookie qua JavaScript; XSS vẫn có thể gây hại theo cách khác (ví dụ giả mạo giao diện, đánh cắp dữ liệu khác)", "Có, vì nó mã hoá toàn bộ trang", "Không liên quan đến XSS"], ans: 1 },
+    { id: 74, p: "p2", c: "XSS & Chiếm Phiên", q: "Một trang cho phép người dùng để lại bình luận không được lọc nội dung, và đoạn script trong bình luận tự chạy với mọi người xem sau này. Đây là ví dụ của?", a: ["Reflected XSS", "Stored (Persistent) XSS", "CSRF", "SQL Injection"], ans: 1 },
+    { id: 75, p: "p2", c: "XSS & Chiếm Phiên", q: "Trong chuỗi tấn công \"XSS → đánh cắp cookie → chiếm phiên\", bước nào thể hiện rõ nhất hậu quả thực tế đối với nạn nhân?", a: ["Bước phát hiện lỗ hổng XSS", "Bước chiếm phiên đăng nhập, cho phép kẻ tấn công hành động như nạn nhân", "Bước mã hoá payload", "Bước quét cổng mạng ban đầu"], ans: 1 },
+
+    // --- PHẦN 3: NOSQL INJECTION (76-100) ---
+    { id: 76, p: "p3", c: "NoSQL Injection", q: "MongoDB tổ chức dữ liệu theo mô hình nào?", a: ["Bảng - dòng - cột như SQL truyền thống", "Document (tài liệu) - Collection (bộ sưu tập) - Database", "File - thư mục - ổ đĩa", "Node - edge - graph"], ans: 1 },
+    { id: 77, p: "p3", c: "NoSQL Injection", q: "Một \"document\" trong MongoDB tương đương khái niệm nào gần nhất trong SQL?", a: ["Một database", "Một dòng (row) dữ liệu, nhưng ở định dạng giống JSON/BSON", "Một câu lệnh truy vấn", "Một chỉ mục (index)"], ans: 1 },
+    { id: 78, p: "p3", c: "NoSQL Injection", q: "Một \"collection\" trong MongoDB tương đương khái niệm nào gần nhất trong SQL?", a: ["Một bảng (table)", "Một cột (column)", "Một hàng (row)", "Một hệ quản trị cơ sở dữ liệu khác"], ans: 0 },
+    { id: 79, p: "p3", c: "NoSQL Injection", q: "Định dạng dữ liệu mà MongoDB lưu trữ bên trong thực chất là gì?", a: ["XML", "BSON (Binary JSON)", "CSV", "YAML"], ans: 1 },
+    { id: 80, p: "p3", c: "NoSQL Injection", q: "Hai kiểu tấn công chính trong NoSQL Injection với MongoDB là gì?", a: ["UNION-based và Error-based", "Operator Injection và Syntax Injection", "Boolean-based và Time-based", "Reflected và Stored"], ans: 1 },
+    { id: 81, p: "p3", c: "NoSQL Injection", q: "Operator Injection trong MongoDB nghĩa là gì?", a: ["Chèn các toán tử truy vấn đặc biệt của MongoDB (như $ne, $gt, $regex) để thay đổi logic truy vấn", "Chèn câu lệnh SQL thuần tuý", "Khai thác lỗi tràn bộ đệm", "Tấn công DDoS vào cổng MongoDB"], ans: 0 },
+    { id: 82, p: "p3", c: "NoSQL Injection", q: "Syntax Injection trong NoSQLi (thường gặp khi backend dùng $where hoặc build query bằng JavaScript) nhằm mục đích gì?", a: ["Thoát khỏi ngữ cảnh truy vấn hiện tại để chèn mã JavaScript tuỳ ý thực thi phía server", "Chỉ thay đổi định dạng ngày tháng", "Mã hoá lại dữ liệu", "Không có tác dụng gì với MongoDB"], ans: 0 },
+    { id: 83, p: "p3", c: "NoSQL Injection", q: "Toán tử $where trong MongoDB nguy hiểm vì sao?", a: ["Nó cho phép thực thi một đoạn mã JavaScript tuỳ ý trong quá trình truy vấn, dễ bị lợi dụng nếu nhận input không kiểm soát", "Nó chỉ dùng để sắp xếp dữ liệu", "Nó không tồn tại trong MongoDB", "Nó chỉ hoạt động khi offline"], ans: 0 },
+    { id: 84, p: "p3", c: "NoSQL Injection", q: "Toán tử $ne (not equal) có thể bị lợi dụng như thế nào để vượt đăng nhập?", a: ["Gửi điều kiện kiểu {\"password\": {\"$ne\": \"\"}} để khớp với mọi mật khẩu khác chuỗi rỗng, bỏ qua việc kiểm tra mật khẩu chính xác", "Nó luôn trả về false nên không khai thác được", "Nó chỉ dùng để xoá dữ liệu", "Nó chỉ hoạt động với số nguyên"], ans: 0 },
+    { id: 85, p: "p3", c: "NoSQL Injection", q: "Khi gửi dữ liệu dạng mảng (ví dụ username[$ne]=admin) trong form login, mục tiêu của kẻ tấn công là gì?", a: ["Biến tham số thành một toán tử MongoDB để điều kiện truy vấn luôn khớp thay vì so sánh giá trị chính xác", "Gửi nhiều username cùng lúc để đăng nhập song song", "Làm chậm phản hồi server", "Không có tác dụng gì đặc biệt"], ans: 0 },
+    { id: 86, p: "p3", c: "NoSQL Injection", q: "Payload dạng {\"username\": {\"$gt\": \"\"}, \"password\": {\"$gt\": \"\"}} khi gửi tới một backend không kiểm tra kiểu dữ liệu đầu vào có thể dẫn đến hậu quả gì?", a: ["Server tự động từ chối toàn bộ request", "Điều kiện luôn đúng, có thể giúp vượt qua xác thực mà không cần biết thông tin đăng nhập chính xác", "Database bị xoá hoàn toàn", "Không ảnh hưởng vì MongoDB không hỗ trợ $gt"], ans: 1 },
+    { id: 87, p: "p3", c: "NoSQL Injection", q: "Vì sao việc backend parse input từ JSON hoặc query string thành object một cách không kiểm soát lại nguy hiểm với NoSQLi?", a: ["Vì kẻ tấn công có thể gửi một object chứa toán tử MongoDB thay vì một giá trị chuỗi thông thường", "Vì JSON luôn an toàn tuyệt đối", "Vì object luôn bị từ chối bởi MongoDB", "Không có rủi ro nào"], ans: 0 },
+    { id: 88, p: "p3", c: "NoSQL Injection", q: "Toán tử $nin (not in) có thể bị lợi dụng để làm gì?", a: ["Loại trừ một danh sách giá trị cụ thể khỏi điều kiện so khớp, từ đó chọn ra các bản ghi không nằm trong danh sách loại trừ", "Chỉ dùng để mã hoá dữ liệu", "Chỉ hoạt động với số thực", "Không có ứng dụng trong tấn công"], ans: 0 },
+    { id: 89, p: "p3", c: "NoSQL Injection", q: "Khi kẻ tấn công muốn đăng nhập vào MỘT tài khoản bất kỳ khác ngoài một danh sách tài khoản đã biết, toán tử nào phù hợp?", a: ["$eq", "$nin với danh sách loại trừ", "$set", "$unset"], ans: 1 },
+    { id: 90, p: "p3", c: "NoSQL Injection", q: "Sự khác biệt giữa $in và $nin là gì?", a: ["$in khớp nếu giá trị nằm trong danh sách; $nin khớp nếu giá trị KHÔNG nằm trong danh sách", "Hai toán tử này giống hệt nhau", "$in chỉ dùng cho chuỗi, $nin chỉ dùng cho số", "Không toán tử nào áp dụng được cho truy vấn đăng nhập"], ans: 0 },
+    { id: 91, p: "p3", c: "NoSQL Injection", q: "Toán tử $regex trong MongoDB có thể bị lạm dụng như thế nào trong tấn công?", a: ["Dò từng ký tự của mật khẩu bằng cách thử các mẫu biểu thức chính quy (regex) khớp dần từng vị trí, tương tự kiểu \"hangman\"", "Chỉ dùng để định dạng ngày tháng", "Không thể dùng để tấn công vì luôn bị chặn", "Chỉ áp dụng cho trường số"], ans: 0 },
+    { id: 92, p: "p3", c: "NoSQL Injection", q: "Kỹ thuật dò mật khẩu kiểu \"hangman\" bằng $regex hoạt động dựa trên nguyên lý gì?", a: ["Gửi lần lượt các regex thử từng ký tự ở từng vị trí, quan sát phản hồi true/false để xác định ký tự đúng, lặp lại cho đến khi dựng được toàn bộ chuỗi", "Gửi toàn bộ wordlist cùng lúc trong một request duy nhất", "Luôn cần quyền admin database trước", "Chỉ hoạt động khi có lỗi cú pháp hiển thị rõ ràng"], ans: 0 },
+    { id: 93, p: "p3", c: "NoSQL Injection", q: "Vì sao kỹ thuật dò từng ký tự bằng $regex được xem là một dạng \"blind\" injection?", a: ["Vì kẻ tấn công không nhìn thấy trực tiếp giá trị mật khẩu mà chỉ suy luận qua phản hồi true/false của ứng dụng", "Vì nó luôn làm mù trình duyệt nạn nhân", "Vì MongoDB mã hoá mọi phản hồi", "Không có liên hệ nào với khái niệm blind injection"], ans: 0 },
+    { id: 94, p: "p3", c: "NoSQL Injection", q: "Để tăng tốc độ dò mật khẩu bằng $regex, kẻ tấn công thường làm gì?", a: ["Dò ký tự đầu tiên có thể khớp với nhiều giá trị cùng lúc bằng một bộ ký tự (character class) trong regex thay vì thử từng ký tự đơn lẻ", "Giảm độ dài mật khẩu mục tiêu xuống 0", "Chuyển sang tấn công SQL Injection", "Không có cách nào tăng tốc"], ans: 0 },
+    { id: 95, p: "p3", c: "NoSQL Injection", q: "Để phát hiện một ứng dụng có khả năng dùng MongoDB (và do đó có thể dễ bị NoSQLi), dấu hiệu nào có thể quan sát được?", a: ["Các tham số được gửi dưới dạng mảng/object (param[key]=value) hoặc phản hồi lỗi liên quan đến BSON/Mongo", "Trang luôn trả về mã lỗi HTTP 200 duy nhất", "Trang không có form đăng nhập", "Trang chỉ dùng hình ảnh tĩnh"], ans: 0 },
+    { id: 96, p: "p3", c: "NoSQL Injection", q: "Khác biệt cơ bản giữa SQL Injection và NoSQL Injection là gì?", a: ["SQLi khai thác câu lệnh SQL dạng chuỗi; NoSQLi (với MongoDB) thường khai thác cấu trúc truy vấn dạng object/JSON và các toán tử đặc thù", "NoSQLi không tồn tại trong thực tế", "SQLi chỉ áp dụng cho web, NoSQLi chỉ áp dụng cho desktop", "Không có khác biệt nào"], ans: 0 },
+    { id: 97, p: "p3", c: "NoSQL Injection", q: "Biện pháp phòng chống NoSQL Injection cơ bản nhất là gì?", a: ["Kiểm tra và ép kiểu dữ liệu đầu vào nghiêm ngặt (chỉ chấp nhận kiểu string/number như mong đợi, từ chối object lạ), tránh dùng $where với input người dùng", "Chỉ cần đổi sang dùng SQL", "Tắt hoàn toàn chức năng đăng nhập", "Không có biện pháp phòng chống nào hiệu quả"], ans: 0 },
+    { id: 98, p: "p3", c: "NoSQL Injection", q: "Vì sao việc validate input phía client không đủ để chống NoSQL Injection?", a: ["Vì kẻ tấn công có thể gửi request trực tiếp đến API backend (qua Burp Suite, curl...) bỏ qua hoàn toàn giao diện client", "Vì NoSQL không chấp nhận request từ công cụ ngoài trình duyệt", "Vì validate client luôn đúng 100%", "Không liên quan"], ans: 0 },
+    { id: 99, p: "p3", c: "NoSQL Injection", q: "Trong một bài lab NoSQL Injection Tutorial (TryHackMe), mục tiêu học tập chính thường là gì?", a: ["Hiểu cách các toán tử MongoDB có thể bị lạm dụng để vượt xác thực và trích xuất dữ liệu", "Học cách cài đặt MongoDB trên Windows", "Học cách thiết kế giao diện web", "Học cách cấu hình firewall mạng"], ans: 0 },
+    { id: 100, p: "p3", c: "NoSQL Injection", q: "Nếu một API nhận trực tiếp JSON body và đưa thẳng vào truy vấn MongoDB mà không kiểm tra cấu trúc, rủi ro lớn nhất là gì?", a: ["Không có rủi ro vì JSON luôn an toàn", "Kẻ tấn công có thể chèn toán tử tuỳ ý để thao túng logic truy vấn, dẫn đến vượt xác thực hoặc rò rỉ dữ liệu", "Chỉ ảnh hưởng đến tốc độ xử lý", "Chỉ xảy ra nếu dùng HTTP thay vì HTTPS"], ans: 1 },
+
+    // --- PHẦN 4: ENUMERATION & SCANNING (101-140) ---
+    { id: 101, p: "p4", c: "Thu thập & Dò quét", q: "Kỹ thuật \"user enumeration\" nghĩa là gì?", a: ["Xác định danh sách tài khoản người dùng hợp lệ tồn tại trên hệ thống", "Mã hoá danh sách người dùng", "Xoá tài khoản người dùng không hoạt động", "Tạo tài khoản mới hàng loạt"], ans: 0 },
+    { id: 102, p: "p4", c: "Thu thập & Dò quét", q: "Thông báo lỗi đăng nhập dạng \"verbose\" (ví dụ phân biệt \"Sai mật khẩu\" và \"Tài khoản không tồn tại\") gây rủi ro gì?", a: ["Không có rủi ro, chỉ giúp UX tốt hơn", "Cho phép kẻ tấn công suy luận được username nào là hợp lệ, phục vụ tấn công brute force tiếp theo", "Giúp tăng tốc độ server", "Giúp mã hoá mật khẩu tốt hơn"], ans: 1 },
+    { id: 103, p: "p4", c: "Thu thập & Dò quét", q: "Chức năng \"quên mật khẩu\" (forgot password) có thể bị lợi dụng để enumeration như thế nào?", a: ["Nếu thông báo phản hồi khác nhau giữa email tồn tại và không tồn tại, kẻ tấn công có thể xác định email/tài khoản hợp lệ", "Chức năng này luôn an toàn tuyệt đối", "Không liên quan gì đến enumeration", "Chỉ ảnh hưởng đến admin"], ans: 0 },
+    { id: 104, p: "p4", c: "Thu thập & Dò quét", q: "Chức năng đăng ký tài khoản (registration) có thể lộ thông tin enumeration khi nào?", a: ["Khi hệ thống báo rõ \"email đã được sử dụng\" cho email đã tồn tại", "Khi hệ thống yêu cầu xác thực CAPTCHA", "Khi hệ thống dùng HTTPS", "Không bao giờ lộ thông tin"], ans: 0 },
+    { id: 105, p: "p4", c: "Thu thập & Dò quét", q: "Cách phòng chống user enumeration phổ biến là gì?", a: ["Trả về thông báo lỗi chung chung, giống nhau cho mọi trường hợp (sai user hoặc sai password)", "Hiển thị chi tiết lỗi để người dùng dễ sửa", "Tắt hoàn toàn chức năng đăng nhập", "Dùng mật khẩu mặc định cho mọi tài khoản"], ans: 0 },
+    { id: 106, p: "p4", c: "Thu thập & Dò quét", q: "Việc biết được chính sách mật khẩu (độ dài tối thiểu, yêu cầu ký tự đặc biệt...) giúp ích gì cho kẻ tấn công?", a: ["Không giúp ích gì", "Giúp xây dựng/lọc wordlist phù hợp, tăng hiệu quả tấn công brute force", "Giúp mã hoá payload SQL", "Giúp bypass CAPTCHA tự động"], ans: 1 },
+    { id: 107, p: "p4", c: "Thu thập & Dò quét", q: "Một chính sách mật khẩu yếu (ví dụ chỉ cần 4 ký tự, không yêu cầu phức tạp) dẫn đến rủi ro gì?", a: ["Không có rủi ro đáng kể", "Không gian mật khẩu nhỏ, dễ bị brute force hoặc dictionary attack thành công nhanh hơn", "Giúp hệ thống chạy nhanh hơn", "Giúp tăng cường bảo mật tuyệt đối"], ans: 1 },
+    { id: 108, p: "p4", c: "Thu thập & Dò quét", q: "Wordlist dùng trong tấn công brute force/dictionary thường được xây dựng dựa trên yếu tố nào?", a: ["Thông tin rò rỉ (leaked credentials), thông tin cá nhân nạn nhân, và các mẫu mật khẩu phổ biến", "Chỉ số ngẫu nhiên hoàn toàn không có cơ sở", "Chỉ dùng số điện thoại của admin", "Chỉ dùng địa chỉ IP của server"], ans: 0 },
+    { id: 109, p: "p4", c: "Thu thập & Dò quét", q: "Nmap là công cụ chủ yếu dùng để làm gì?", a: ["Quét mạng, phát hiện host sống, cổng mở và dịch vụ đang chạy", "Soạn thảo văn bản", "Quản lý cơ sở dữ liệu", "Thiết kế giao diện web"], ans: 0 },
+    { id: 110, p: "p4", c: "Thu thập & Dò quét", q: "Chế độ quét nào của Nmap dùng để phát hiện các máy đang hoạt động (host discovery) trong một dải mạng?", a: ["Ping scan (ví dụ -sn)", "Service version scan", "Script scan", "OS fingerprinting độc lập"], ans: 0 },
+    { id: 111, p: "p4", c: "Thu thập & Dò quét", q: "Tham số -sV trong Nmap dùng để làm gì?", a: ["Quét và xác định phiên bản dịch vụ đang chạy trên các cổng mở", "Chỉ quét cổng UDP", "Tắt tường lửa mục tiêu", "Mã hoá gói tin quét"], ans: 0 },
+    { id: 112, p: "p4", c: "Thu thập & Dò quét", q: "Tham số -p- trong Nmap có ý nghĩa gì?", a: ["Quét toàn bộ 65535 cổng thay vì chỉ các cổng phổ biến mặc định", "Chỉ quét cổng 80 và 443", "Quét theo chế độ im lặng hoàn toàn không gửi gói tin", "Dừng quét ngay lập tức"], ans: 0 },
+    { id: 113, p: "p4", c: "Thu thập & Dò quét", q: "NSE (Nmap Scripting Engine) cho phép người dùng làm gì?", a: ["Chạy các script mở rộng để kiểm tra chi tiết hơn (phát hiện lỗ hổng, thu thập thông tin dịch vụ...)", "Chỉ hiển thị giao diện đồ hoạ", "Tự động vá lỗ hổng tìm thấy", "Mã hoá kết quả quét"], ans: 0 },
+    { id: 114, p: "p4", c: "Thu thập & Dò quét", q: "Quét sâu (aggressive scan, ví dụ -A) trong Nmap thường kết hợp những gì?", a: ["Chỉ ping đơn thuần", "Phát hiện phiên bản dịch vụ, hệ điều hành, traceroute và chạy một số NSE script mặc định", "Chỉ liệt kê tên miền", "Chỉ quét cổng UDP"], ans: 1 },
+    { id: 115, p: "p4", c: "Thu thập & Dò quét", q: "Vì sao quét toàn bộ cổng (-p-) thường mất nhiều thời gian hơn quét mặc định?", a: ["Vì nó quét tất cả 65535 cổng thay vì chỉ khoảng 1000 cổng phổ biến nhất", "Vì Nmap luôn quét chậm bất kể số cổng", "Vì nó yêu cầu kết nối VPN", "Không có sự khác biệt về thời gian"], ans: 0 },
+    { id: 116, p: "p4", c: "Thu thập & Dò quét", q: "Kết quả quét Nmap cho thấy cổng 21 (FTP) đang mở, bước tiếp theo hợp lý trong quá trình đánh giá là gì?", a: ["Dừng lại vì FTP không bao giờ có lỗ hổng", "Kiểm tra phiên bản dịch vụ FTP, thử đăng nhập anonymous, tra cứu CVE liên quan đến phiên bản đó", "Ngay lập tức tấn công DDoS cổng đó", "Bỏ qua và chỉ tập trung vào cổng 443"], ans: 1 },
+    { id: 117, p: "p4", c: "Thu thập & Dò quét", q: "Nikto là công cụ chuyên dùng để làm gì?", a: ["Quét cấu hình sai và các vấn đề bảo mật phổ biến trên web server", "Quét mạng nội bộ không liên quan đến web", "Giải mã mật khẩu", "Tạo wordlist tự động"], ans: 0 },
+    { id: 118, p: "p4", c: "Thu thập & Dò quét", q: "Nikto có thể phát hiện loại vấn đề nào sau đây trên web server?", a: ["File/thư mục nhạy cảm còn tồn tại, phiên bản phần mềm lỗi thời, thiếu header bảo mật", "Lỗ hổng zero-day chưa từng được biết đến", "Lỗi phần cứng của máy chủ", "Lỗi mạng điện"], ans: 0 },
+    { id: 119, p: "p4", c: "Thu thập & Dò quét", q: "Vì sao kết quả quét của Nikto thường cần được kiểm chứng thủ công thêm?", a: ["Vì Nikto không bao giờ sai", "Vì Nikto có thể báo cáo một số kết quả dương tính giả (false positive) cần xác minh lại", "Vì Nikto chỉ chạy được trên Windows", "Vì Nikto không tạo ra báo cáo"], ans: 1 },
+    { id: 120, p: "p4", c: "Thu thập & Dò quét", q: "OpenVAS là công cụ thuộc nhóm nào?", a: ["Công cụ quét lỗ hổng bảo mật toàn diện (vulnerability scanner), thường ánh xạ kết quả ra các CVE tương ứng", "Công cụ thiết kế đồ hoạ", "Trình duyệt web bảo mật", "Hệ quản trị cơ sở dữ liệu"], ans: 0 },
+    { id: 121, p: "p4", c: "Thu thập & Dò quét", q: "So với Nikto (chỉ tập trung vào web server), OpenVAS thường có phạm vi quét như thế nào?", a: ["Hẹp hơn, chỉ quét được một loại dịch vụ duy nhất", "Rộng hơn, có thể quét nhiều loại dịch vụ/hệ thống và nhiều lớp lỗ hổng khác nhau trên toàn hệ thống", "Không có khác biệt nào", "Chỉ hoạt động trên hệ điều hành macOS"], ans: 1 },
+    { id: 122, p: "p4", c: "Thu thập & Dò quét", q: "Kết quả quét của OpenVAS thường được trình bày kèm theo thông tin gì để đánh giá mức độ nghiêm trọng?", a: ["Mã CVE và điểm CVSS tương ứng", "Chỉ số giá cổ phiếu công ty", "Lịch sử thời tiết khu vực", "Không có thông tin đánh giá nào"], ans: 0 },
+    { id: 123, p: "p4", c: "Thu thập & Dò quét", q: "CVE là viết tắt của cụm từ nào?", a: ["Common Vulnerabilities and Exposures", "Central Verification Engine", "Computer Virus Evaluation", "Cyber Vulnerability Encryption"], ans: 0 },
+    { id: 124, p: "p4", c: "Thu thập & Dò quét", q: "Mục đích chính của hệ thống CVE là gì?", a: ["Cung cấp một mã định danh chuẩn hoá, duy nhất cho mỗi lỗ hổng bảo mật đã biết để dễ tra cứu và chia sẻ thông tin", "Mã hoá toàn bộ dữ liệu người dùng", "Tạo ra các bản vá tự động", "Thay thế hoàn toàn cho tường lửa"], ans: 0 },
+    { id: 125, p: "p4", c: "Thu thập & Dò quét", q: "CVSS (Common Vulnerability Scoring System) dùng để làm gì?", a: ["Đưa ra thang điểm đánh giá mức độ nghiêm trọng của một lỗ hổng bảo mật", "Đếm số lượng lỗ hổng trên một hệ thống", "Mã hoá mã CVE", "Thay thế cho mã CVE"], ans: 0 },
+    { id: 126, p: "p4", c: "Thu thập & Dò quét", q: "Điểm CVSS thường nằm trong khoảng nào?", a: ["0 đến 10", "0 đến 100", "1 đến 5", "-10 đến 10"], ans: 0 },
+    { id: 127, p: "p4", c: "Thu thập & Dò quét", q: "Một lỗ hổng có điểm CVSS cao (gần 10) thường được ưu tiên xử lý như thế nào so với lỗ hổng điểm thấp?", a: ["Được ưu tiên vá/khắc phục sớm hơn do mức độ nghiêm trọng và rủi ro cao hơn", "Không cần ưu tiên, xử lý theo thứ tự ngẫu nhiên", "Luôn bị bỏ qua vì quá khó vá", "Chỉ cần theo dõi, không cần hành động"], ans: 0 },
+    { id: 128, p: "p4", c: "Thu thập & Dò quét", q: "Những yếu tố nào thường ảnh hưởng đến điểm CVSS của một lỗ hổng?", a: ["Mức độ dễ khai thác, phạm vi ảnh hưởng (tính bí mật, toàn vẹn, sẵn sàng), và điều kiện cần thiết để khai thác", "Chỉ phụ thuộc vào tên nhà cung cấp phần mềm", "Chỉ phụ thuộc vào ngày phát hiện lỗ hổng", "Chỉ phụ thuộc vào giá bán phần mềm"], ans: 0 },
+    { id: 129, p: "p4", c: "Thu thập & Dò quét", q: "Trình tự hợp lý trong giai đoạn thu thập thông tin và dò quét thường là gì?", a: ["Khai thác lỗ hổng trước, sau đó mới quét cổng", "Quét host/cổng (Nmap) → xác định dịch vụ/phiên bản → quét lỗ hổng chuyên sâu (Nikto/OpenVAS) → tra cứu CVE/CVSS để ưu tiên xử lý", "Chỉ cần đọc tài liệu công khai, không cần công cụ nào", "Không có trình tự cụ thể, làm gì trước cũng được"], ans: 1 },
+    { id: 130, p: "p4", c: "Thu thập & Dò quét", q: "Vì sao việc xác định chính xác phiên bản dịch vụ (ví dụ Apache 2.4.49) lại quan trọng trong dò quét lỗ hổng?", a: ["Để tra cứu các CVE đã biết liên quan đến đúng phiên bản đó, từ đó xác định khả năng khai thác", "Không quan trọng, mọi phiên bản đều giống nhau", "Chỉ để thống kê số liệu", "Chỉ ảnh hưởng đến giao diện hiển thị"], ans: 0 },
+    { id: 131, p: "p4", c: "Thu thập & Dò quét", q: "Một tổ chức có nhiều lỗ hổng được phát hiện qua OpenVAS nhưng nguồn lực vá lỗi có hạn, tiêu chí ưu tiên hợp lý nhất là gì?", a: ["Vá ngẫu nhiên theo thứ tự alphabet tên lỗ hổng", "Ưu tiên theo điểm CVSS cao và mức độ ảnh hưởng thực tế đến hệ thống quan trọng", "Chỉ vá lỗ hổng được phát hiện gần đây nhất bất kể mức độ nghiêm trọng", "Không cần vá vì đã có tường lửa"], ans: 1 },
+    { id: 132, p: "p4", c: "Thu thập & Dò quét", q: "Enumeration (liệt kê thông tin) trong giai đoạn trinh sát (recon) khác gì so với scanning (quét)?", a: ["Enumeration thường tập trung sâu hơn vào việc trích xuất thông tin chi tiết (user, thư mục, dịch vụ cụ thể) sau khi đã xác định được mục tiêu qua scanning ban đầu", "Hai khái niệm hoàn toàn giống nhau, không có khác biệt", "Enumeration chỉ áp dụng cho mạng không dây", "Scanning luôn diễn ra sau enumeration"], ans: 0 },
+    { id: 133, p: "p4", c: "Thu thập & Dò quét", q: "Việc kết hợp nhiều công cụ (Nmap, Nikto, OpenVAS) trong một bài đánh giá bảo mật mang lại lợi ích gì?", a: ["Không có lợi ích gì, dùng một công cụ là đủ", "Mỗi công cụ có thế mạnh riêng (phát hiện cổng/dịch vụ, cấu hình sai web, lỗ hổng hệ thống sâu hơn), kết hợp giúp có bức tranh toàn diện hơn", "Chỉ để tăng thời gian thực hiện không cần thiết", "Chỉ cần dùng Nmap là đủ cho mọi trường hợp"], ans: 1 },
+    { id: 134, p: "p4", c: "Thu thập & Dò quét", q: "Trong lab \"Enumeration & Brute Force\" (TryHackMe), kỹ năng trọng tâm được rèn luyện là gì?", a: ["Thiết kế cơ sở dữ liệu", "Kết hợp kỹ thuật liệt kê thông tin (username, dịch vụ...) với tấn công brute force có mục tiêu để xâm nhập hệ thống", "Viết ứng dụng di động", "Cấu hình mạng không dây"], ans: 1 },
+    { id: 135, p: "p4", c: "Thu thập & Dò quét", q: "Trong lab \"Vulnerability Scanning Tools\" (TryHackMe), trọng tâm thực hành thường là gì?", a: ["Sử dụng các công cụ quét lỗ hổng (như Nikto, OpenVAS) để phát hiện và đánh giá điểm yếu trên hệ thống mục tiêu", "Thiết kế giao diện người dùng", "Viết trình biên dịch", "Quản lý mạng xã hội"], ans: 0 },
+    { id: 136, p: "p4", c: "Thu thập & Dò quét", q: "Một hệ thống trả về thông báo khác nhau rõ rệt khi nhập sai username so với sai password. Rủi ro bảo mật trực tiếp nhất là gì?", a: ["Không có rủi ro đáng kể", "Lộ thông tin giúp kẻ tấn công enumeration tài khoản hợp lệ, phục vụ brute force hiệu quả hơn", "Chỉ ảnh hưởng đến trải nghiệm người dùng", "Giúp tăng tốc độ xử lý server"], ans: 1 },
+    { id: 137, p: "p4", c: "Thu thập & Dò quét", q: "Khi quét Nmap phát hiện một cổng dịch vụ lạ không rõ chức năng, bước tiếp theo nên là gì?", a: ["Bỏ qua hoàn toàn", "Dùng -sV/NSE để xác định dịch vụ, sau đó tra cứu thêm thông tin/lỗ hổng liên quan", "Ngay lập tức khai thác mà không cần xác minh", "Báo cáo là lỗi quét sai"], ans: 1 },
+    { id: 138, p: "p4", c: "Thu thập & Dò quét", q: "Vì sao đánh giá bảo mật (pentest) thường bắt đầu bằng giai đoạn thu thập thông tin thay vì khai thác ngay?", a: ["Vì hiểu rõ bề mặt tấn công (attack surface) giúp xác định đúng mục tiêu, giảm rủi ro bỏ sót hoặc gây hại không cần thiết", "Vì quy định yêu cầu làm vậy mà không có lý do kỹ thuật", "Vì khai thác luôn dễ hơn thu thập thông tin", "Không có lý do đặc biệt"], ans: 0 },
+    { id: 139, p: "p4", c: "Thu thập & Dò quét", q: "CVSS điểm 9.8 (Critical) cho một lỗ hổng RCE không cần xác thực nói lên điều gì về mức độ ưu tiên xử lý?", a: ["Mức ưu tiên rất thấp vì điểm này chỉ mang tính tham khảo", "Cần được vá/khắc phục khẩn cấp do nguy cơ bị khai thác từ xa, gây hậu quả nghiêm trọng mà không cần điều kiện xác thực", "Không cần xử lý vì CVSS không phản ánh thực tế", "Chỉ cần xử lý sau khi có sự cố xảy ra"], ans: 1 },
+    { id: 140, p: "p4", c: "Thu thập & Dò quét", q: "Một công cụ quét tự động báo \"không tìm thấy lỗ hổng nào\" trên một hệ thống. Kết luận hợp lý nhất là gì?", a: ["Hệ thống chắc chắn hoàn toàn an toàn, không cần kiểm tra thêm", "Không có lỗ hổng nào đã biết (trong phạm vi công cụ quét được) tại thời điểm quét; vẫn cần đánh giá thủ công bổ sung vì công cụ có giới hạn và false negative", "Không cần làm gì thêm, có thể đóng dự án đánh giá bảo mật", "Công cụ quét luôn chính xác tuyệt đối 100%"], ans: 1 },
+
+    // --- PHẦN 5: CHUỖI TẤN CÔNG WEB HOÀN CHỈNH (141-175) ---
+    { id: 141, p: "p5", c: "Chuỗi tấn công Web", q: "Giai đoạn Recon trong một chuỗi tấn công web thường bao gồm hoạt động nào?", a: ["Quét cổng, đọc HTTP header, dò tìm thư mục/endpoint ẩn", "Chỉ đơn thuần mã hoá dữ liệu", "Chỉ thực hiện sau khi đã chiếm được quyền admin", "Không cần thiết nếu đã biết địa chỉ IP mục tiêu"], ans: 0 },
+    { id: 142, p: "p5", c: "Chuỗi tấn công Web", q: "Việc đọc kỹ các HTTP response header có thể tiết lộ thông tin gì hữu ích cho kẻ tấn công?", a: ["Loại/phiên bản web server, công nghệ backend, các cấu hình bảo mật (hoặc thiếu sót) đang áp dụng", "Không tiết lộ thông tin gì", "Chỉ tiết lộ múi giờ server", "Chỉ tiết lộ định dạng ngôn ngữ hiển thị"], ans: 0 },
+    { id: 143, p: "p5", c: "Chuỗi tấn công Web", q: "Việc dò tìm thư mục/endpoint ẩn (ví dụ /admin, /api, /backup) thường được thực hiện bằng cách nào?", a: ["Dùng công cụ brute force thư mục với wordlist (ví dụ dirb, gobuster, ffuf) để thử hàng loạt đường dẫn", "Đoán ngẫu nhiên một lần duy nhất", "Luôn phải hỏi trực tiếp quản trị viên", "Không thể thực hiện được nếu không có mã nguồn"], ans: 0 },
+    { id: 144, p: "p5", c: "Chuỗi tấn công Web", q: "Phát hiện endpoint /api ẩn trong giai đoạn Recon có ý nghĩa gì với kẻ tấn công?", a: ["Không có ý nghĩa gì đặc biệt", "Có thể là bề mặt tấn công mới, ví dụ API có thể thiếu kiểm soát truy cập chặt chẽ như giao diện chính", "Chỉ dùng để trang trí giao diện", "Luôn được bảo vệ tuyệt đối nên không cần quan tâm"], ans: 1 },
+    { id: 145, p: "p5", c: "Chuỗi tấn công Web", q: "Vì sao giai đoạn Recon được xem là nền tảng cho các bước tấn công tiếp theo trong chuỗi tấn công web?", a: ["Thông tin thu thập được (công nghệ, endpoint, cấu trúc) giúp định hướng chính xác các kỹ thuật khai thác phù hợp ở bước sau", "Vì nó luôn là bước cuối cùng của một cuộc tấn công", "Vì nó không liên quan đến các bước khai thác sau này", "Vì quy định bắt buộc phải làm theo thứ tự ngẫu nhiên"], ans: 0 },
+    { id: 146, p: "p5", c: "Chuỗi tấn công Web", q: "IDOR là lỗ hổng xảy ra khi nào?", a: ["Khi ứng dụng cho phép truy cập trực tiếp đến đối tượng dữ liệu (file, bản ghi...) thông qua tham số mà không kiểm tra quyền sở hữu/truy cập đúng cách", "Khi mật khẩu quá ngắn", "Khi server không có kết nối Internet", "Khi dùng HTTPS thay vì HTTP"], ans: 0 },
+    { id: 147, p: "p5", c: "Chuỗi tấn công Web", q: "Ví dụ điển hình của IDOR là gì?", a: ["Đổi tham số user_id=123 thành user_id=124 trên URL và xem được dữ liệu của người dùng khác mà không bị chặn", "Chèn script vào ô bình luận", "Dò brute force mật khẩu", "Gửi email giả mạo"], ans: 0 },
+    { id: 148, p: "p5", c: "Chuỗi tấn công Web", q: "Nguyên nhân gốc rễ của lỗ hổng IDOR thường là gì?", a: ["Thiếu kiểm tra phân quyền (authorization check) phía server đối với từng đối tượng dữ liệu được truy cập", "Mật khẩu người dùng quá yếu", "Server chạy hệ điều hành cũ", "Kết nối mạng không ổn định"], ans: 0 },
+    { id: 149, p: "p5", c: "Chuỗi tấn công Web", q: "Vì sao IDOR thường khó bị phát hiện qua các công cụ quét tự động thông thường?", a: ["Vì nó đòi hỏi hiểu logic nghiệp vụ và việc so sánh quyền truy cập giữa các tài khoản khác nhau, điều mà scanner tự động khó suy luận được", "Vì IDOR không tồn tại trong thực tế", "Vì công cụ quét luôn tự động phát hiện được IDOR chính xác 100%", "Vì IDOR chỉ xảy ra trên ứng dụng di động"], ans: 0 },
+    { id: 150, p: "p5", c: "Chuỗi tấn công Web", q: "Hậu quả của một lỗ hổng IDOR nghiêm trọng có thể là gì?", a: ["Không có hậu quả đáng kể", "Rò rỉ hoặc chỉnh sửa trái phép dữ liệu nhạy cảm của người dùng khác (thông tin cá nhân, đơn hàng, tài liệu...)", "Chỉ ảnh hưởng đến giao diện hiển thị", "Chỉ xảy ra trên môi trường thử nghiệm, không ảnh hưởng thực tế"], ans: 1 },
+    { id: 151, p: "p5", c: "Chuỗi tấn công Web", q: "Một cơ chế reset mật khẩu bị xem là \"yếu\" khi nào?", a: ["Khi token reset dễ đoán, không hết hạn hợp lý, hoặc không được gửi/qua kênh xác thực an toàn", "Khi yêu cầu xác thực hai yếu tố", "Khi token chỉ có hiệu lực trong 5 phút", "Khi gửi token qua email đã xác minh"], ans: 0 },
+    { id: 152, p: "p5", c: "Chuỗi tấn công Web", q: "Nếu token reset mật khẩu chỉ là một số thứ tự tăng dần dễ đoán, rủi ro là gì?", a: ["Không có rủi ro vì token vẫn ngẫu nhiên đủ", "Kẻ tấn công có thể đoán hoặc brute force token để chiếm quyền reset mật khẩu của tài khoản khác", "Chỉ ảnh hưởng tốc độ xử lý hệ thống", "Giúp tăng cường bảo mật tài khoản"], ans: 1 },
+    { id: 153, p: "p5", c: "Chuỗi tấn công Web", q: "Việc không giới hạn số lần thử token reset mật khẩu dẫn đến nguy cơ gì?", a: ["Kẻ tấn công có thể brute force token trong khoảng thời gian hiệu lực để chiếm tài khoản", "Không có nguy cơ nào vì token luôn đủ dài", "Giúp người dùng hợp pháp reset nhanh hơn, không ảnh hưởng bảo mật", "Chỉ ảnh hưởng đến admin"], ans: 0 },
+    { id: 154, p: "p5", c: "Chuỗi tấn công Web", q: "Biện pháp cải thiện bảo mật cho chức năng reset mật khẩu bao gồm điều gì?", a: ["Dùng token ngẫu nhiên đủ mạnh (entropy cao), thời gian hết hạn ngắn, gửi qua kênh đã xác thực (email/SMS đã đăng ký), giới hạn số lần thử", "Bỏ hẳn chức năng xác thực token", "Dùng token là tên người dùng", "Không cần giới hạn thời gian hiệu lực token"], ans: 0 },
+    { id: 155, p: "p5", c: "Chuỗi tấn công Web", q: "Việc lợi dụng token reset lộ/đoán được để chiếm tài khoản thuộc giai đoạn nào trong chuỗi tấn công?", a: ["Giai đoạn khai thác (exploitation) nhắm vào cơ chế xác thực/khôi phục tài khoản", "Giai đoạn dọn dẹp dấu vết", "Giai đoạn chỉ mang tính lý thuyết, không áp dụng thực tế", "Giai đoạn cài đặt phần mềm diệt virus"], ans: 0 },
+    { id: 156, p: "p5", c: "Chuỗi tấn công Web", q: "Sau khi xâm nhập được một tài khoản người dùng thường, mục tiêu leo thang vào admin panel thường nhằm đạt được gì?", a: ["Quyền kiểm soát cao hơn đối với hệ thống/dữ liệu (quản lý người dùng, cấu hình, dữ liệu toàn hệ thống...)", "Chỉ để xem giao diện đẹp hơn", "Không có mục tiêu cụ thể", "Chỉ để kiểm tra tốc độ mạng"], ans: 0 },
+    { id: 157, p: "p5", c: "Chuỗi tấn công Web", q: "Những lỗ hổng nào trước đó (IDOR, broken access control...) có thể là bước đệm để tiếp cận admin panel?", a: ["Không có liên hệ nào", "Lỗ hổng phân quyền cho phép truy cập trái phép vào các chức năng/dữ liệu dành riêng cho admin", "Chỉ có SQL Injection mới dẫn đến leo thang quyền", "Chỉ có XSS mới dẫn đến leo thang quyền"], ans: 1 },
+    { id: 158, p: "p5", c: "Chuỗi tấn công Web", q: "Việc tìm ra đường dẫn admin panel ẩn (ví dụ /admin, /manage) thuộc hoạt động nào trong chuỗi tấn công?", a: ["Giai đoạn Recon (dò thư mục ẩn)", "Giai đoạn dọn dẹp dấu vết", "Giai đoạn vá lỗ hổng", "Không thuộc giai đoạn nào trong chuỗi tấn công"], ans: 0 },
+    { id: 159, p: "p5", c: "Chuỗi tấn công Web", q: "RCE (Remote Code Execution) qua chức năng upload file thường xảy ra khi nào?", a: ["Khi ứng dụng cho phép upload file thực thi được (ví dụ webshell) và file đó có thể được truy cập/thực thi trên server", "Khi file upload luôn bị từ chối hoàn toàn", "Khi server không có chức năng upload", "Khi dùng mã hoá SSL cho kết nối"], ans: 0 },
+    { id: 160, p: "p5", c: "Chuỗi tấn công Web", q: "Kỹ thuật \"lách bộ lọc đuôi file\" thường dùng cách nào sau đây?", a: ["Đổi đuôi file thành dạng không bị chặn trực tiếp nhưng vẫn được server thực thi (ví dụ .php.jpg, .phtml, thay đổi hoa/thường, null byte...) tuỳ theo cấu hình server", "Không thể lách được bộ lọc đuôi file trong bất kỳ trường hợp nào", "Luôn phải đổi tên file thành .txt", "Chỉ cần nén file lại là qua được mọi bộ lọc"], ans: 0 },
+    { id: 161, p: "p5", c: "Chuỗi tấn công Web", q: "Nếu ứng dụng chỉ kiểm tra đuôi file mà không kiểm tra nội dung thực (MIME type/magic bytes) của file upload, rủi ro là gì?", a: ["Không có rủi ro vì đuôi file là đủ để xác định loại file", "Kẻ tấn công có thể giả mạo đuôi file để tải lên file thực thi độc hại (webshell) trá hình", "Chỉ ảnh hưởng đến dung lượng lưu trữ", "Chỉ ảnh hưởng tốc độ tải file lên"], ans: 1 },
+    { id: 162, p: "p5", c: "Chuỗi tấn công Web", q: "Sau khi upload thành công một webshell, bước tiếp theo kẻ tấn công thường thực hiện là gì?", a: ["Xoá ngay webshell vừa upload", "Truy cập trực tiếp đến đường dẫn chứa webshell để thực thi lệnh tuỳ ý trên server", "Không làm gì thêm", "Chỉ dùng để lưu trữ ảnh cá nhân"], ans: 1 },
+    { id: 163, p: "p5", c: "Chuỗi tấn công Web", q: "Biện pháp phòng chống RCE qua upload hiệu quả bao gồm điều gì?", a: ["Lọc theo danh sách cho phép (whitelist) loại file, kiểm tra nội dung thực tế của file, lưu file upload ở nơi không thể thực thi trực tiếp được", "Chỉ cần giới hạn dung lượng file", "Không cần kiểm tra gì vì server luôn an toàn mặc định", "Chỉ cần đổi tên miền thường xuyên"], ans: 0 },
+    { id: 164, p: "p5", c: "Chuỗi tấn công Web", q: "Bài học \"hạn chế phía client không phải là bảo mật\" nghĩa là gì?", a: ["Việc chỉ validate/giới hạn ở JavaScript hoặc giao diện người dùng không đủ để đảm bảo an toàn, vì kẻ tấn công có thể bỏ qua và gửi request trực tiếp đến server", "Giao diện người dùng luôn là lớp bảo mật mạnh nhất", "Không cần kiểm tra gì ở phía server nếu đã kiểm tra ở client", "Chỉ áp dụng cho ứng dụng di động, không áp dụng cho web"], ans: 0 },
+    { id: 165, p: "p5", c: "Chuỗi tấn công Web", q: "Để khắc phục hạn chế của việc chỉ dựa vào kiểm tra phía client, nguyên tắc cốt lõi cần áp dụng là gì?", a: ["Luôn thực hiện kiểm tra, xác thực và phân quyền ở phía server, xem client là không đáng tin cậy", "Chỉ cần tăng cường giao diện đẹp hơn", "Bỏ hoàn toàn các bước kiểm tra để tăng tốc độ", "Chuyển toàn bộ logic sang phía client để giảm tải server"], ans: 0 },
+    { id: 166, p: "p5", c: "Chuỗi tấn công Web", q: "Trong một kịch bản pentest thực tế theo chuỗi W3, thứ tự hợp lý nhất thường là gì?", a: ["RCE → Recon → IDOR → Password reset", "Recon → tìm lỗ hổng (IDOR/password reset yếu...) → khai thác để leo thang quyền → đạt RCE hoặc kiểm soát sâu hơn hệ thống", "Không có thứ tự logic nào, làm ngẫu nhiên", "Luôn bắt đầu bằng RCE trước tiên"], ans: 1 },
+    { id: 167, p: "p5", c: "Chuỗi tấn công Web", q: "Nếu một ứng dụng có lỗ hổng IDOR cho phép xem thông tin người dùng khác, và endpoint đó cũng lộ token reset mật khẩu, hậu quả kết hợp có thể là gì?", a: ["Không có hậu quả gì nghiêm trọng hơn so với từng lỗ hổng riêng lẻ", "Kẻ tấn công có thể kết hợp hai lỗ hổng để chiếm toàn bộ tài khoản của nạn nhân thông qua IDOR lấy token rồi reset mật khẩu", "Chỉ ảnh hưởng đến một tài khoản admin duy nhất", "Lỗ hổng tự động được vá khi kết hợp"], ans: 1 },
+    { id: 168, p: "p5", c: "Chuỗi tấn công Web", q: "Vì sao các pentest thực tế thường tìm cách \"chuỗi\" (chain) nhiều lỗ hổng nhỏ lại với nhau thay vì chỉ báo cáo từng lỗ hổng riêng lẻ?", a: ["Để minh hoạ rõ hơn tác động thực tế tổng hợp mà kẻ tấn công thực sự có thể đạt được, giúp tổ chức đánh giá đúng mức độ rủi ro", "Vì làm vậy không có ý nghĩa thực tế", "Vì quy định yêu cầu bắt buộc, không có lý do kỹ thuật", "Vì mỗi lỗ hổng riêng lẻ luôn không đáng kể"], ans: 0 },
+    { id: 169, p: "p5", c: "Chuỗi tấn công Web", q: "Một tổ chức sau khi bị pentest phát hiện chuỗi lỗ hổng Recon→IDOR→RCE nên ưu tiên hành động nào trước tiên?", a: ["Phớt lờ báo cáo vì hệ thống vẫn đang hoạt động bình thường", "Ưu tiên vá các lỗ hổng cho phép leo thang nghiêm trọng nhất trước (ví dụ RCE), đồng thời rà soát toàn bộ các điểm yếu trong chuỗi", "Chỉ cần đổi mật khẩu admin là đủ", "Chỉ cần tắt tạm thời chức năng upload vĩnh viễn không cần sửa lỗi gốc"], ans: 1 },
+    { id: 170, p: "p5", c: "Chuỗi tấn công Web", q: "Trong chuỗi tấn công web hoàn chỉnh, điểm chung giữa IDOR, password reset yếu, và leo thang admin panel là gì?", a: ["Không có điểm chung nào", "Đều liên quan đến vấn đề kiểm soát truy cập (access control) không chặt chẽ ở phía server", "Đều là lỗi phần cứng", "Đều chỉ xảy ra khi mất kết nối mạng"], ans: 1 },
+    { id: 171, p: "p5", c: "Chuỗi tấn công Web", q: "Việc dò thư mục ẩn như /backup trong Recon có thể dẫn đến phát hiện gì nguy hiểm?", a: ["Không có gì nguy hiểm, thư mục backup luôn trống", "File backup mã nguồn hoặc cơ sở dữ liệu chứa thông tin nhạy cảm (mật khẩu, khoá API...) bị lộ công khai", "Chỉ chứa ảnh không quan trọng", "Luôn được mã hoá nên an toàn tuyệt đối"], ans: 1 },
+    { id: 172, p: "p5", c: "Chuỗi tấn công Web", q: "IDOR có thể tồn tại ở loại tham số nào ngoài ID trên URL?", a: ["Chỉ tồn tại trên URL", "Có thể tồn tại ở tham số trong body request, API key định danh đối tượng, hoặc tham số ẩn trong form", "Chỉ tồn tại trong cookie", "Không thể tồn tại ở bất kỳ vị trí nào khác"], ans: 1 },
+    { id: 173, p: "p5", c: "Chuỗi tấn công Web", q: "Một ứng dụng cho phép upload avatar, chỉ kiểm tra đuôi file ở phía JavaScript trước khi gửi. Nhận định nào đúng?", a: ["Đây là biện pháp bảo mật đầy đủ, không cần thêm kiểm tra server", "Đây là biện pháp không đủ an toàn; kẻ tấn công có thể bỏ qua kiểm tra client và gửi file bất kỳ trực tiếp đến server", "JavaScript validation luôn không thể bị vượt qua", "Không liên quan đến bảo mật tổng thể hệ thống"], ans: 1 },
+    { id: 174, p: "p5", c: "Chuỗi tấn công Web", q: "Đâu là điểm khác biệt chính giữa lỗ hổng IDOR và lỗ hổng Broken Access Control nói chung?", a: ["IDOR là một dạng cụ thể của Broken Access Control, tập trung vào việc tham chiếu trực tiếp đến đối tượng mà thiếu kiểm tra quyền", "Hai khái niệm hoàn toàn không liên quan đến nhau", "IDOR luôn nghiêm trọng hơn mọi lỗi access control khác", "Broken Access Control chỉ áp dụng cho ứng dụng di động"], ans: 0 },
+    { id: 175, p: "p5", c: "Chuỗi tấn công Web", q: "Trong vai trò người bảo vệ hệ thống (defender), bài học quan trọng nhất rút ra từ chuỗi tấn công Recon→IDOR→Password reset yếu→RCE là gì?", a: ["Chỉ cần một lớp bảo mật mạnh ở một điểm duy nhất là đủ", "Cần áp dụng phòng thủ theo chiều sâu (defense in depth): kiểm soát truy cập chặt chẽ ở mọi lớp, không chỉ dựa vào một biện pháp duy nhất", "Không cần làm gì vì tấn công luôn thành công bất kể biện pháp nào", "Chỉ cần ẩn các endpoint là đủ để an toàn tuyệt đối"], ans: 1 },
+
+    // --- PHẦN 6: BIỆN PHÁP PHÒNG CHỐNG TỔNG HỢP (176-195) ---
+    { id: 176, p: "p6", c: "Phòng chống tổng hợp", q: "Nguyên tắc cốt lõi để phòng chống SQL/NoSQL Injection là gì?", a: ["Tách biệt lệnh truy vấn khỏi dữ liệu đầu vào (dùng prepared statement/parameterized query, hoặc kiểm tra kiểu dữ liệu nghiêm ngặt với NoSQL)", "Chỉ cần đổi tên bảng trong database", "Chỉ cần dùng HTTPS", "Không có biện pháp phòng chống hiệu quả"], ans: 0 },
+    { id: 177, p: "p6", c: "Phòng chống tổng hợp", q: "Prepared statement (câu lệnh chuẩn bị sẵn) giúp chống SQL Injection bằng cách nào?", a: ["Tham số hoá dữ liệu đầu vào, khiến input luôn được xử lý như dữ liệu thuần, không thể biến thành một phần câu lệnh SQL", "Mã hoá toàn bộ database", "Xoá log truy vấn", "Tăng tốc độ truy vấn"], ans: 0 },
+    { id: 178, p: "p6", c: "Phòng chống tổng hợp", q: "Để phòng chống XSS, hai biện pháp cốt lõi cần kết hợp là gì?", a: ["Xử lý/encode output đúng ngữ cảnh và đặt cờ HttpOnly (cùng Secure) cho cookie", "Chỉ cần tắt toàn bộ JavaScript trên trình duyệt người dùng", "Chỉ cần dùng mật khẩu mạnh", "Chỉ cần quét virus định kỳ"], ans: 0 },
+    { id: 179, p: "p6", c: "Phòng chống tổng hợp", q: "Để phòng chống IDOR, biện pháp cốt lõi là gì?", a: ["Kiểm tra phân quyền (authorization) phía server cho mọi truy cập đến đối tượng dữ liệu cụ thể, không chỉ dựa vào việc ẩn/khó đoán ID", "Chỉ cần đổi ID từ số sang chữ cho khó đoán hơn", "Chỉ cần mã hoá toàn bộ URL", "Không cần biện pháp gì vì IDOR không nguy hiểm"], ans: 0 },
+    { id: 180, p: "p6", c: "Phòng chống tổng hợp", q: "Để phòng chống khai thác password reset yếu, các yếu tố cần đảm bảo là gì?", a: ["Token mạnh (độ ngẫu nhiên cao), gửi qua kênh đã xác thực (email/SMS), và giới hạn số lần thử", "Token là tên người dùng để dễ nhớ", "Không cần thời hạn cho token", "Gửi token công khai trên URL không mã hoá"], ans: 0 },
+    { id: 181, p: "p6", c: "Phòng chống tổng hợp", q: "Để phòng chống RCE qua chức năng upload, nguyên tắc nào sau đây là đúng?", a: ["Lọc file theo danh sách cho phép (whitelist) và kiểm tra nội dung thực tế của file, không chỉ dựa vào đuôi file", "Chỉ cần giới hạn số lượng file upload mỗi ngày", "Chỉ cần đổi tên file ngẫu nhiên là đủ, không cần kiểm tra nội dung", "Không cần biện pháp gì vì upload luôn an toàn"], ans: 0 },
+    { id: 182, p: "p6", c: "Phòng chống tổng hợp", q: "Vì sao \"blacklist\" (danh sách cấm) thường kém an toàn hơn \"whitelist\" (danh sách cho phép) khi kiểm soát loại file upload?", a: ["Blacklist dễ bị bỏ sót các trường hợp biến thể mới (đuôi file lạ, kỹ thuật lách lọc), trong khi whitelist chỉ cho phép đúng những gì đã được xác định an toàn", "Không có khác biệt nào giữa hai cách tiếp cận", "Blacklist luôn an toàn hơn whitelist trong mọi trường hợp", "Whitelist không thể áp dụng được cho việc upload file"], ans: 0 },
+    { id: 183, p: "p6", c: "Phòng chống tổng hợp", q: "Đặt cờ HttpOnly cho cookie phòng chống trực tiếp nguy cơ nào?", a: ["Đánh cắp giá trị cookie thông qua JavaScript độc hại chèn được bằng XSS", "Tấn công SQL Injection", "Tấn công từ chối dịch vụ (DDoS)", "Tấn công dò quét cổng mạng"], ans: 0 },
+    { id: 184, p: "p6", c: "Phòng chống tổng hợp", q: "Việc trả về thông báo lỗi đăng nhập chung chung (không phân biệt sai user/sai password) giúp phòng chống kỹ thuật tấn công nào?", a: ["User enumeration (liệt kê tài khoản hợp lệ)", "SQL Injection", "RCE qua upload", "Tấn công DDoS"], ans: 0 },
+    { id: 185, p: "p6", c: "Phòng chống tổng hợp", q: "Nguyên tắc \"không tin tưởng input từ client\" (never trust user input) áp dụng chung cho những lỗ hổng nào đã học?", a: ["Chỉ áp dụng cho SQL Injection", "Áp dụng rộng rãi cho hầu hết các lỗ hổng: SQLi, NoSQLi, XSS, upload RCE, và cả việc chỉ validate phía client", "Chỉ áp dụng cho các cuộc tấn công mạng không dây", "Không áp dụng cho bất kỳ lỗ hổng web nào"], ans: 1 },
+    { id: 186, p: "p6", c: "Phòng chống tổng hợp", q: "Việc áp dụng chính sách mật khẩu mạnh (độ dài, độ phức tạp) giúp giảm thiểu rủi ro nào?", a: ["Brute force và dictionary attack dễ thành công hơn khi mật khẩu yếu", "Rủi ro SQL Injection", "Rủi ro RCE qua upload", "Rủi ro lộ thông tin qua HTTP header"], ans: 0 },
+    { id: 187, p: "p6", c: "Phòng chống tổng hợp", q: "Để giảm thiểu rủi ro bị user enumeration qua chức năng quên mật khẩu, nên áp dụng nguyên tắc nào?", a: ["Luôn trả về cùng một thông báo (ví dụ \"nếu email tồn tại, chúng tôi đã gửi hướng dẫn\") bất kể email có tồn tại hay không", "Thông báo rõ ràng \"email không tồn tại trong hệ thống\"", "Không cần xử lý vì không ảnh hưởng bảo mật", "Chỉ cần thêm CAPTCHA mà không cần đồng nhất thông báo"], ans: 0 },
+    { id: 188, p: "p6", c: "Phòng chống tổng hợp", q: "CSP (Content Security Policy) là một lớp phòng thủ bổ sung hiệu quả nhất cho loại lỗ hổng nào?", a: ["XSS", "SQL Injection", "IDOR", "Brute force mật khẩu"], ans: 0 },
+    { id: 189, p: "p6", c: "Phòng chống tổng hợp", q: "Việc quét lỗ hổng định kỳ bằng các công cụ như Nikto/OpenVAS đóng vai trò gì trong vòng đời bảo mật của một hệ thống?", a: ["Không có vai trò gì đáng kể", "Phát hiện sớm các điểm yếu/cấu hình sai đã biết để kịp thời khắc phục trước khi bị khai thác", "Chỉ cần thực hiện một lần duy nhất khi triển khai hệ thống", "Thay thế hoàn toàn cho việc viết mã an toàn"], ans: 1 },
+    { id: 190, p: "p6", c: "Phòng chống tổng hợp", q: "Trong phòng thủ theo chiều sâu (defense in depth), vì sao không nên chỉ dựa vào một biện pháp bảo mật duy nhất?", a: ["Vì mỗi lớp phòng thủ có thể có điểm yếu riêng; kết hợp nhiều lớp giúp giảm rủi ro khi một lớp bị vượt qua", "Vì càng nhiều biện pháp càng làm chậm hệ thống mà không có lợi ích", "Vì quy định yêu cầu áp dụng nhiều biện pháp dù không cần thiết", "Vì một biện pháp duy nhất luôn đủ an toàn tuyệt đối"], ans: 0 },
+    { id: 191, p: "p6", c: "Phòng chống tổng hợp", q: "Việc áp dụng nguyên tắc phân quyền tối thiểu (principle of least privilege) giúp giảm thiểu hậu quả của lỗ hổng nào nếu bị khai thác?", a: ["Giảm phạm vi/hậu quả khi IDOR, leo thang quyền hoặc RCE bị khai thác thành công, do tài khoản/tiến trình bị chiếm chỉ có quyền hạn chế", "Không liên quan đến bất kỳ lỗ hổng nào đã học", "Chỉ áp dụng cho quản trị mạng, không áp dụng cho ứng dụng web", "Làm tăng nguy cơ bị tấn công"], ans: 0 },
+    { id: 192, p: "p6", c: "Phòng chống tổng hợp", q: "Việc ghi log và giám sát (logging & monitoring) đóng vai trò gì trong phòng chống tấn công nói chung?", a: ["Không có vai trò gì vì không ngăn được tấn công trực tiếp", "Giúp phát hiện sớm dấu hiệu bất thường (dò quét, brute force, khai thác) để phản ứng kịp thời, dù không ngăn chặn trực tiếp lỗ hổng", "Chỉ dùng để thống kê lưu lượng truy cập cho mục đích marketing", "Thay thế hoàn toàn cho việc vá lỗ hổng"], ans: 1 },
+    { id: 193, p: "p6", c: "Phòng chống tổng hợp", q: "Việc vá (patch) phần mềm/dịch vụ kịp thời theo các CVE đã công bố giúp ích gì?", a: ["Không giúp ích gì nếu đã có tường lửa", "Loại bỏ các lỗ hổng đã biết trước khi bị kẻ tấn công khai thác, đặc biệt là lỗ hổng điểm CVSS cao", "Chỉ cần thiết với hệ điều hành, không cần với ứng dụng web", "Chỉ cần vá một lần duy nhất khi triển khai hệ thống"], ans: 1 },
+    { id: 194, p: "p6", c: "Phòng chống tổng hợp", q: "Trong số các kỹ thuật đã học (SQLi, XSS, NoSQLi, IDOR, upload RCE, enumeration), điểm chung lớn nhất giữa nguyên nhân gốc rễ của chúng là gì?", a: ["Đều hoàn toàn không liên quan đến nhau", "Phần lớn xuất phát từ việc tin tưởng/thiếu kiểm soát dữ liệu đầu vào hoặc quyền truy cập từ phía client một cách không an toàn ở phía server", "Đều chỉ do lỗi phần cứng gây ra", "Đều chỉ xảy ra khi không có tường lửa"], ans: 1 },
+    { id: 195, p: "p6", c: "Phòng chống tổng hợp", q: "Vì sao kiểm thử bảo mật (pentest) định kỳ, kết hợp cả công cụ tự động và đánh giá thủ công, được xem là cần thiết?", a: ["Vì công cụ tự động có thể bỏ sót các lỗ hổng logic nghiệp vụ (như IDOR) mà chỉ con người mới phát hiện được qua phân tích thủ công", "Vì công cụ tự động luôn phát hiện được 100% mọi lỗ hổng", "Vì pentest thủ công không cần thiết nếu đã có công cụ quét tự động", "Vì không có lý do kỹ thuật nào, chỉ là thủ tục hành chính"], ans: 0 }
+];
+
+let questions = [...rawQuestions];
+let currentIndex = 0;
+let userAnswers = {}; 
+
+// Load saved answers from localStorage if available
+try {
+    const saved = localStorage.getItem('web_sec_quiz_answers');
+    if (saved) {
+        userAnswers = JSON.parse(saved);
+    }
+} catch(e) {
+    console.error("Cannot load saved state", e);
+}
+
+function filterCategory() {
+    const selectedPart = document.getElementById("partSelect").value;
+    if (selectedPart === "all") {
+        questions = [...rawQuestions];
+    } else {
+        questions = rawQuestions.filter(q => q.p === selectedPart);
+    }
+    currentIndex = 0;
+    renderQuestion();
+}
+
+function renderQuestion() {
+    if (questions.length === 0) return;
+
+    const q = questions[currentIndex];
+    document.getElementById("qCategory").innerText = q.c;
+    document.getElementById("qTitle").innerText = `Câu ${q.id}: ${q.q}`;
+    document.getElementById("qBadgeId").innerText = `#${q.id}`;
+    
+    // Update progress text
+    document.getElementById("questionCount").innerText = `Câu hỏi: ${currentIndex + 1} / ${questions.length}`;
+    
+    const answeredTotal = Object.keys(userAnswers).length;
+    const progressPercent = Math.round((answeredTotal / rawQuestions.length) * 100);
+    document.getElementById("progressText").innerText = `${progressPercent}%`;
+    document.getElementById("progressBar").style.width = `${progressPercent}%`;
+
+    // Render Options
+    const optionsGrid = document.getElementById("optionsGrid");
+    optionsGrid.innerHTML = "";
+
+    const prefixes = ["A", "B", "C", "D"];
+    const chosen = userAnswers[q.id];
+
+    const statusIcon = document.getElementById("qStatusIcon");
+    if (chosen !== undefined) {
+        if (chosen === q.ans) {
+            statusIcon.innerHTML = `<span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-check"></i> Chính xác</span>`;
+        } else {
+            statusIcon.innerHTML = `<span class="text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30 font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-xmark"></i> Chưa đúng</span>`;
+        }
+    } else {
+        statusIcon.innerHTML = `<span class="text-xs text-slate-400 italic">Chưa trả lời</span>`;
+    }
+
+    q.a.forEach((optText, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn w-full text-left p-4 rounded-xl border text-sm font-medium flex items-start gap-3 bg-slate-900/60 border-slate-700/70 text-slate-200";
+        
+        if (chosen !== undefined) {
+            btn.disabled = true;
+            if (idx === q.ans) {
+                btn.className = "option-btn w-full text-left p-4 rounded-xl border text-sm font-medium flex items-start gap-3 bg-emerald-500/15 border-emerald-500 text-emerald-300";
+            }
+            if (idx === chosen && chosen !== q.ans) {
+                btn.className = "option-btn w-full text-left p-4 rounded-xl border text-sm font-medium flex items-start gap-3 bg-rose-500/15 border-rose-500 text-rose-300";
+            }
+        }
+
+        btn.onclick = () => selectOption(q.id, idx);
+        
+        let prefixClass = "text-sky-400 font-bold min-w-[20px]";
+        if (chosen !== undefined) {
+            if (idx === q.ans) prefixClass = "text-emerald-400 font-bold min-w-[20px]";
+            else if (idx === chosen) prefixClass = "text-rose-400 font-bold min-w-[20px]";
+        }
+
+        btn.innerHTML = `<span class="${prefixClass}">${prefixes[idx]}.</span> <span class="leading-relaxed flex-grow">${escapeHtml(optText)}</span>`;
+        optionsGrid.appendChild(btn);
+    });
+
+    // Navigation Buttons State
+    document.getElementById("prevBtn").disabled = currentIndex === 0;
+    document.getElementById("nextBtn").disabled = currentIndex === questions.length - 1;
+
+    updateScoreSummary();
+}
+
+function selectOption(qId, idx) {
+    if (userAnswers[qId] !== undefined) return;
+    userAnswers[qId] = idx;
+
+    // Save to localStorage
+    try {
+        localStorage.setItem('web_sec_quiz_answers', JSON.stringify(userAnswers));
+    } catch(e){}
+
+    renderQuestion();
+}
+
+function navigate(direction) {
+    const newIndex = currentIndex + direction;
+    if (newIndex >= 0 && newIndex < questions.length) {
+        currentIndex = newIndex;
+        renderQuestion();
+    }
+}
+
+function jumpToQuestion() {
+    const inputVal = parseInt(document.getElementById("jumpInput").value);
+    if (isNaN(inputVal) || inputVal < 1 || inputVal > 195) {
+        showToast("Vui lòng nhập số câu từ 1 đến 195", "error");
+        return;
+    }
+
+    let foundIndex = questions.findIndex(q => q.id === inputVal);
+    if (foundIndex === -1) {
+        document.getElementById("partSelect").value = "all";
+        questions = [...rawQuestions];
+        foundIndex = questions.findIndex(q => q.id === inputVal);
+    }
+
+    if (foundIndex !== -1) {
+        currentIndex = foundIndex;
+        renderQuestion();
+        showToast(`Đã chuyển đến câu ${inputVal}`);
+    }
+}
+
+function updateScoreSummary() {
+    let correct = 0;
+    let incorrect = 0;
+    rawQuestions.forEach(q => {
+        const ans = userAnswers[q.id];
+        if (ans !== undefined) {
+            if (ans === q.ans) correct++;
+            else incorrect++;
+        }
+    });
+    document.getElementById("correctScore").innerText = `Đúng: ${correct}`;
+    document.getElementById("incorrectScore").innerText = `Sai: ${incorrect}`;
+}
+
+function resetQuiz() {
+    if (confirm("Bạn có chắc chắn muốn làm lại từ đầu? Tất cả kết quả đã chọn sẽ bị xóa.")) {
+        userAnswers = {};
+        localStorage.removeItem('web_sec_quiz_answers');
+        renderQuestion();
+        showToast("Đã lập lại toàn bộ tiến độ làm bài!");
+    }
+}
+
+function toggleGridModal() {
+    const modal = document.getElementById("gridModal");
+    if (modal.classList.contains("hidden")) {
+        renderGridModal();
+        modal.classList.remove("hidden");
+    } else {
+        modal.classList.add("hidden");
+    }
+}
+
+function renderGridModal() {
+    const modalGrid = document.getElementById("modalGrid");
+    modalGrid.innerHTML = "";
+
+    const currentQ = questions[currentIndex];
+
+    questions.forEach((q, idx) => {
+        const btn = document.createElement("button");
+        btn.innerText = q.id;
+        
+        let cls = "q-grid-btn text-xs font-bold py-2 rounded-lg border text-center transition flex items-center justify-center ";
+        
+        const ans = userAnswers[q.id];
+        if (ans !== undefined) {
+            if (ans === q.ans) {
+                cls += "bg-emerald-500/20 text-emerald-400 border-emerald-500/50 hover:bg-emerald-500/30";
+            } else {
+                cls += "bg-rose-500/20 text-rose-400 border-rose-500/50 hover:bg-rose-500/30";
+            }
+        } else {
+            cls += "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700";
+        }
+
+        if (currentQ && q.id === currentQ.id) {
+            cls += " ring-2 ring-sky-400 border-sky-400";
+        }
+
+        btn.className = cls;
+        btn.onclick = () => {
+            currentIndex = idx;
+            renderQuestion();
+            toggleGridModal();
+        };
+
+        modalGrid.appendChild(btn);
+    });
+}
+
+function showToast(message, type = "info") {
+    const toast = document.getElementById("toast");
+    const toastMsg = document.getElementById("toastMsg");
+    const toastIcon = document.getElementById("toastIcon");
+
+    toastMsg.innerText = message;
+    if (type === "error") {
+        toastIcon.className = "fa-solid fa-circle-exclamation text-rose-400";
+    } else {
+        toastIcon.className = "fa-solid fa-circle-info text-sky-400";
+    }
+
+    toast.classList.remove("translate-y-[-100px]", "opacity-0");
+    toast.classList.add("translate-y-0", "opacity-100");
+
+    setTimeout(() => {
+        toast.classList.remove("translate-y-0", "opacity-100");
+        toast.classList.add("translate-y-[-100px]", "opacity-0");
+    }, 2500);
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+window.onload = filterCategory;
+</script>
+</body>
+</html>
